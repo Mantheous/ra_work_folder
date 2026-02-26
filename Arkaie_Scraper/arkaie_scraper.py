@@ -8,8 +8,9 @@
 
 import sys
 import re
+import os
 from playwright.sync_api import sync_playwright, expect
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from Utilities.notifier import notify
 from urllib.parse import urlparse, urlencode, urlunparse
 
