@@ -1,0 +1,16 @@
+# TODO
+- [ ] Follow up on Aube1
+- [ ] Find new approach to  scraping 20000+ record sites
+    - [ ] One option is to do it by commune and then just dedupe. This make validation very difficult though.
+- [ ] Rescrape Aube2
+- [ ] Revise the [downloader.py](Utilities/downloader.py)
+- [ ] Create an async scraper
+- [ ] Reimplement other scrapers
+    - [ ] Cher
+    - [ ] Creuse
+    - [ ] Dordogne
+    - [ ] Eure-et-Loir
+    - [ ] Indre
+    - [ ] Landes
+    - [ ] Loiret
+    - [ ] Saint Etienne

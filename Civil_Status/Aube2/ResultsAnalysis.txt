@@ -1,0 +1,45 @@
+The results of Aube2
+Total Records Scraped:		 	4375/2085
+Total Records with duplicates removed:	2075/2085
+
+By Commune deduped
+Hôtel-dieu (TROYES)			79/77
+Saint-Aventin				114/113
+Saint-Denis				99/96
+Saint-Etienne				54/54
+Saint-Frobert				126/124
+Saint-Gilles				58/58
+Saint-Jacques-aux-Nonnains		73/73
+Saint-Jean				190/187
+Saint-Loup				50/50
+Saint-Martin				134/133
+Saint-Nicolas				59/59
+Saint-Nizier				169/168
+Saint-Pantaleon				25/24
+Saint-Pierre				49/49
+Saint-Rémi				80/80
+Saint-Urbain				47/47
+Sainte-Madeleine			92/74
+Troyes					577/539
+
+Something is wrong with this data
+
+By Commune Total
+Hôtel-dieu (TROYES)			77
+Saint-Aventin				113
+Saint-Denis				96
+Saint-Etienne				54
+Saint-Frobert				124
+Saint-Gilles				58
+Saint-Jacques-aux-Nonnains		73
+Saint-Jean				187
+Saint-Loup				50
+Saint-Martin				133
+Saint-Nicolas				59
+Saint-Nizier				168
+Saint-Pantaleon				24
+Saint-Pierre				49
+Saint-Rémi				80
+Saint-Urbain				47
+Sainte-Madeleine			74
+Troyes					539
