@@ -17,13 +17,14 @@
 from playwright.sync_api import sync_playwright, expect # type: ignore
 import time
 import sys
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed")
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from Utilities.notifier import notify
 
 # Global variables for tracking progress
 
-csv_location = "Aube Civil Status/Aube.csv"
-communes_path = "Aube Civil Status/Aube_Communes.txt"
+csv_location = "Civil_Status/Aube1/Aube.csv"
+communes_path = "Civil_Status/Aube1/Aube_Communes.txt"
 tries = 0
 max_tries = 3
 

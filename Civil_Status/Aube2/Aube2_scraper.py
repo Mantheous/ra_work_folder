@@ -2,7 +2,8 @@
 # As of Febuary 2026
 
 import sys
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed")
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from Arkaie_Scraper.arkaie_scraper import ArkaieScraper, CollumnNumbers, DebugConfig
 
 class Aube2Scraper(ArkaieScraper):
@@ -59,13 +60,14 @@ class Aube2Scraper(ArkaieScraper):
 
 
 
-scraper = Aube2Scraper(
-    debug_config=DebugConfig(
-        headless=False, 
-        one_per_page=False, 
-        raise_exceptions=False
+if __name__ == "__main__":
+    scraper = Aube2Scraper(
+        debug_config=DebugConfig(
+            headless=False,
+            one_per_page=False,
+            raise_exceptions=False
+            )
         )
-    )
 
-scraper.run_main()
+    scraper.run_main()
 

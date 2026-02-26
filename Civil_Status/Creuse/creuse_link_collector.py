@@ -6,7 +6,8 @@
 
 from playwright.sync_api import sync_playwright, expect # type: ignore
 import sys
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed")
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from Utilities.notifier import notify
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 import re
@@ -15,7 +16,7 @@ import re
 
 # This is not the origial link. This is a filtered link to finish off the scraper
 root_link = 'https://archives.creuse.fr/rechercher/archives-numerisees/registres-paroissiaux-et-de-letat-civil?arko_default_6089614c0e9ed--ficheFocus='
-csv_location = "Creuse_Civil_Status/Creuse.csv"
+csv_location = "Civil_Status/Creuse/Creuse.csv"
 tries = 0
 max_tries = 5
 results_per_page = 25

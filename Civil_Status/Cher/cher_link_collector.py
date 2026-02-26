@@ -3,13 +3,14 @@
 
 from playwright.sync_api import sync_playwright, expect # type: ignore
 import sys
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed")
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from Utilities.notifier import notify
 
 # Global variables for tracking progress
 
 root_link = 'https://www.archives18.fr/archives-numerisees/registres-paroissiaux-et-etat-civil?arko_default_61011a8e5db65--ficheFocus='
-csv_location = "Cher Civil Status/Cher.csv"
+csv_location = "Civil_Status/Cher/Cher.csv"
 tries = 0
 max_tries = 5
 results_per_page = 25
