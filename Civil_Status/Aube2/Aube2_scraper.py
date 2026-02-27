@@ -2,7 +2,7 @@
 # As of Febuary 2026
 
 import sys
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed")
+sys.path.append("W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder")
 from Arkaie_Scraper.arkaie_scraper import ArkaieScraper, CollumnNumbers, DebugConfig
 
 class Aube2Scraper(ArkaieScraper):
@@ -10,7 +10,7 @@ class Aube2Scraper(ArkaieScraper):
     The primary variation in this scraper is that the "cote" is not available on the main page, 
     so we have to enter the viewer to get it. See ArkaieScraper for general functionality.
     '''
-    def __init__(self, debug_config: DebugConfig):
+    def __init__(self, debug_config: DebugConfig, starting_page: int = 0):
         super().__init__(
             root_link="https://www.archives-aube.fr/recherches/documents-numerises/genealogie/tout-letat-civil/etat-civil-de-la-ville-de-troyes-1535-1919?arko_default_62289d8b205f4--ficheFocus=",
             name="Aube2",
@@ -22,7 +22,8 @@ class Aube2Scraper(ArkaieScraper):
                 period=1,
                 image_count=4
             ),
-            debug_config=debug_config
+            debug_config=debug_config,
+            starting_page=starting_page
         )
 
     def enter_viewer(self, row):
@@ -58,14 +59,15 @@ class Aube2Scraper(ArkaieScraper):
 
 
 
-
-scraper = Aube2Scraper(
-    debug_config=DebugConfig(
-        headless=False, 
-        one_per_page=False, 
-        raise_exceptions=False
+if __name__ == "__main__":
+    scraper = Aube2Scraper(
+        debug_config=DebugConfig(
+            headless=False, 
+            one_per_page=False, 
+            raise_exceptions=False
+            ),
+            starting_page=21,
         )
-    )
 
-scraper.run_main()
+    scraper.run_main()
 

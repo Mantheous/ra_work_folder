@@ -9,7 +9,7 @@ import pandas as pd
 def verify_unique_by_index(file_path, col_index):
     try:
         # Load file with the pipe delimiter
-        column_headers = ['Cote', 'Commune', 'Date_Range', 'Record_Type', 'Count', 'URL']
+        column_headers = ['page','index','Cote', 'Commune', 'Date_Range', 'Record_Type', 'Count', 'URL']
         df = pd.read_csv(file_path, header=None, delimiter='|', names=column_headers)
         
         # Validate index range
@@ -61,4 +61,4 @@ def verify_unique_by_index(file_path, col_index):
     
 
 if __name__ == "__main__":
-    verify_unique_by_index('Utilities/validation_test.csv', 5)
+    verify_unique_by_index('ra_work_folder/Utilities/validation_test.csv', 7)

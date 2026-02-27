@@ -9,7 +9,7 @@
 import sys
 import re
 from playwright.sync_api import sync_playwright, expect
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed")
+sys.path.append("W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder")
 from Utilities.notifier import notify
 from urllib.parse import urlparse, urlencode, urlunparse
 
@@ -35,6 +35,9 @@ class DebugConfig:
 
 # TODO: add stopping point. For testing
 class ArkaieScraper:
+    """
+    
+    """
     def __init__(
             self, 
             root_link: str, 
@@ -53,7 +56,7 @@ class ArkaieScraper:
         self.collumn_numbers = collumn_numbers
 
         if csv_location is None:
-            self.csv_location = f"Civil_Status/{name}/{name}.csv"
+            self.csv_location = f"ra_work_folder/Civil_Status/{name}/{name}.csv"
         else:
             self.csv_location = csv_location
 
@@ -80,7 +83,7 @@ class ArkaieScraper:
             self.jump_to_page(self.page_number)
             number_of_records = int(self.page.locator('div.nombre_resultat_facettes').first.inner_text().replace('\u202f', '').split()[0])
 
-            while(self.page_number <= number_of_records // self.results_per_page):
+            while(self.page_number <= (number_of_records // self.results_per_page) + 1):
                 try:
                     self.scrape_page(self.page_number)
                     self.page_number += 1

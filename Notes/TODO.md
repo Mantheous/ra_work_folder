@@ -14,3 +14,4 @@
     - [ ] Landes
     - [ ] Loiret
     - [ ] Saint Etienne
+- [ ] update the .gitignore so the scraped files are not uploaded to the repo
