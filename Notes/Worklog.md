@@ -122,3 +122,6 @@ I am finishing up the day and I have a downloader that is running. I think it's 
 ## 03-02-2026
 
 Upon arriving to the lab, to my suprise the downloader still seemed to be running. It is concerning to me how hard it is to see if the scraper is actually running. I will have to change the debug system. I like that it tells me which links it had time outs on. But it's not like the link extractor where I can see each file getting added. Okay, I actually was able to find the folder it was working on and it's fast. Like absurdly fast. Like it probably is getting an image every 4 seconds. Yeah I think the math leads an average of about 4.12 seconds per file. I think that is pretty good to be honest
+
+### Async
+I think I can probably run about 5 concurent requests with out recieving any backlash. It sounds like you can put your email in the header which honestly would be good. That way if I am causing issues with their servers they can email me. That would make the scraper about 5 times faster, which changes it from taking days to a single workday. If it costs me a week to get the async working smooth, I think it would only take a day or two, it would still have a huge pay off in the long run.

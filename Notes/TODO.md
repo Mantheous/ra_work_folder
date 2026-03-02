@@ -1,9 +1,8 @@
 # TODO
 - [ ] Follow up on Aube1
+- [ ] Develop a process for handling the edge cases on validating the data
 - [ ] Find new approach to  scraping 20000+ record sites
     - [ ] One option is to do it by commune and then just dedupe. This make validation very difficult though.
-- [x] Rescrape Aube2
-- [ ] Revise the [downloader.py](Utilities/downloader.py)
 - [ ] Create an async scraper
 - [ ] Reimplement other scrapers
     - [ ] Cher
@@ -14,5 +13,6 @@
     - [ ] Landes
     - [ ] Loiret
     - [ ] Saint Etienne
-- [x] update the .gitignore so the scraped files are not uploaded to the repo
-- [ ] Develop a process for handling the edge cases on validating the data
+- [ ] Revise the [downloader.py](Utilities/downloader.py)
+    - [ ] create better logging system
+    - [ ] implement async
