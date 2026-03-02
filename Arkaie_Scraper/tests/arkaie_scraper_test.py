@@ -1,8 +1,22 @@
+import sys
+from unittest import result
 import pytest
 import os
 import pandas as pd
-from Arkaie_Scraper.arkaie_scraper import DebugConfig
+sys.path.append("W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder")
+from Arkaie_Scraper.arkaie_scraper import ArkaieScraper, DebugConfig
 from Civil_Status.Aube2.Aube2_scraper import Aube2Scraper
+
+def test_url_for_page_number_filtered():
+    filter_url = "https://www.archives18.fr/archives-numerisees/registres-paroissiaux-et-etat-civil?arko_default_61011a8e5db65--ficheFocus=&arko_default_61011a8e5db65--filtreGroupes%5Bmode%5D=simple&arko_default_61011a8e5db65--filtreGroupes%5Bop%5D=AND&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bop%5D=AND&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bq%5D%5B%5D=&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bq%5D%5B%5D=Ach%C3%A8res%5B%5Barko_fiche_615ab249b84b4%5D%5D&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bextras%5D%5Bmode%5D=popup&arko_default_61011a8e5db65--from=0&arko_default_61011a8e5db65--resultSize=25&arko_default_61011a8e5db65--contenuIds%5B%5D=2655740&arko_default_61011a8e5db65--modeRestit=arko_default_61011eb03aad2"
+    page_number = 1
+    scraper = ArkaieScraper()
+    scraper.filter_link = filter_url
+    scraper.page_number = 0
+    scraper.results_per_page = 100
+    result_url = scraper.url_for_page_number_filtered(page_number)
+    assert result_url == "https://www.archives18.fr/archives-numerisees/registres-paroissiaux-et-etat-civil?arko_default_61011a8e5db65--ficheFocus=&arko_default_61011a8e5db65--filtreGroupes%5Bmode%5D=simple&arko_default_61011a8e5db65--filtreGroupes%5Bop%5D=AND&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bop%5D=AND&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bq%5D%5B%5D=&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bq%5D%5B%5D=Ach%C3%A8res%5B%5Barko_fiche_615ab249b84b4%5D%5D&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bextras%5D%5Bmode%5D=popup&arko_default_61011a8e5db65--from=0&arko_default_61011a8e5db65--resultSize=100&arko_default_61011a8e5db65--contenuIds%5B%5D=2655740&arko_default_61011a8e5db65--modeRestit=arko_default_61011eb03aad2"
+
 
 def test_aube2_scraper_integrity():
     # Setup test-specific paths
@@ -39,3 +53,6 @@ def test_aube2_scraper_integrity():
     expected_columns = ["Commune", "Year", "URL"] # Update these to your actual columns
     for col in expected_columns:
         assert col in df.columns, f"Missing expected column: {col}"
+
+if __name__ == "__main__":
+    test_url_for_page_number_filtered()

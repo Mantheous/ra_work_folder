@@ -3,7 +3,7 @@
 
 import re
 import sys
-import time
+import pandas as pd
 
 sys.path.append("W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder")
 from Utilities.Validation.retrieve_communes import retrieve_communes
@@ -32,9 +32,10 @@ class CherScraper(ArkaieScraper):
         )
 
     def run_filtered(self):
-        # self.filter_link = "https://www.archives18.fr/archives-numerisees/registres-paroissiaux-et-etat-civil?arko_default_61011a8e5db65--ficheFocus=&arko_default_61011a8e5db65--filtreGroupes%5Bmode%5D=simple&arko_default_61011a8e5db65--filtreGroupes%5Bop%5D=AND&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bop%5D=AND&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bq%5D%5B%5D=&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bq%5D%5B%5D=Ach%C3%A8res%5B%5Barko_fiche_615ab249b84b4%5D%5D&arko_default_61011a8e5db65--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_61011b4c3eacb%5D%5Bextras%5D%5Bmode%5D=popup&arko_default_61011a8e5db65--from=0&arko_default_61011a8e5db65--resultSize=25&arko_default_61011a8e5db65--contenuIds%5B%5D=2655740&arko_default_61011a8e5db65--modeRestit=arko_default_61011eb03aad2"
-        # self.run_main()
-        communes = retrieve_communes(self.root_link)
+        try:
+            communes = pd.read_csv("W:/RA_work_folders/Ashton_Reed/ra_work_folder/Civil_Status/Cher/cher_communes.csv")
+        except:
+            communes = retrieve_communes(self.root_link, "W:/RA_work_folders/Ashton_Reed/ra_work_folder/Civil_Status/Cher/cher_communes.csv")
 
         for commune in communes['communs'].tolist():
             self.filter_link = self.get_filter_url(commune)
@@ -43,7 +44,7 @@ class CherScraper(ArkaieScraper):
     def get_filter_url(self, commune: str) -> str:
         url = ""
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=False)
+            browser = pw.chromium.launch(headless=self.debug_config.headless)
             context = browser.new_context()
             page = context.new_page()
             page.goto(self.root_link)
@@ -57,22 +58,51 @@ class CherScraper(ArkaieScraper):
                 letters.get_by_text(commune[0]).click(timeout=1000)
             except:
                 pass
-            page.locator('.filtre_liste_popup_liste').get_by_title(commune).click()
+            page.locator('.filtre_liste_popup_liste').get_by_title(commune, exact=True).click()
             page.wait_for_timeout(2000)
             url = page.url
-            print(url)
+            browser.close()
+        return url
+
+    # There are many cases where records are not labeled to show up in the filters
+    # This will filter for all of the left overs.
+    def get_not_commune_filter(self, communes: pd.DataFrame) -> str:
+        url = ""
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=self.debug_config.headless)
+            context = browser.new_context()
+            page = context.new_page()
+            page.goto(self.root_link)
+
+            page.locator('#arko_default_61011b4c3eacb--operator').select_option('NOT')
+
+            for commune in communes['communs'].tolist():
+                commune_search = page.get_by_label(re.compile(r"Commune", re.IGNORECASE))
+                if commune_search.count() == 1:
+                    commune_search.click()
+
+                page.get_by_label('Consulter la liste').click()
+                letters = page.locator("//body/div[4]/nav/ul")
+                try:
+                    letters.get_by_text(commune[0],).click(timeout=1000)
+                except:
+                    pass
+                page.locator('.filtre_liste_popup_liste').get_by_title(commune, exact=True).click()
+            url = page.url
             browser.close()
         return url
 
 if __name__ == "__main__":
     scraper = CherScraper(
         debug_config=DebugConfig(
-            headless=False, 
-            one_per_page=True, 
-            raise_exceptions=True
+            headless=True, 
+            one_per_page=False, 
+            raise_exceptions=False
             ),
-            starting_page=0,
+            starting_page=1,
         )
 
-    print(scraper.run_filtered())
+    scraper.run_filtered()
+    # communes = pd.read_csv("W:/RA_work_folders/Ashton_Reed/ra_work_folder/Civil_Status/Cher/cher_communes.csv")
+    # print(scraper.get_not_commune_filter(communes))
 

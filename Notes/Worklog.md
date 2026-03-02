@@ -131,4 +131,8 @@ So implementing a filtered sraper is proving more difficult than I thought. I ca
 Well actually I can inject it easily. I would need to modify how my jump to page function works in the general scraper, but it's not crazy complicated. Now what is hard is figuring out what the search filter is. Its not easily manipulatable in the url. I can find which querey specifies the commune, but when I grab my current url for some reason it is missing the queries I need. It even has some queries, it's just missing some.
 
 ### Testing
-I set up a basic test for the Aube2 scrapper. It seems to work, because well the test doesn't pass and my codes broken :)
+I set up a basic test for the Aube2 scrapper and one other thing. That will be really good for not breaking things.
+
+I started a run of Cher, but I know it's doomed to fail because Belleville will pull up multiple results. That just means that we need to match it exactly. That will avoid the whole problem of overlap. Well I actually am pretty sure I just fixed that. So well, I will restart cher I guess. Wait actually it will not fix the problem with the commune overlap. It's just so unstable. It makes me feel real yucky making such a hack. Filtering for commune will require deduping and also the not commune. That process makes some of our records untracable. ![alt text](image-1.png)
+
+The filtering is actually worse than I thought. There are records that show up on multiple filters that seemly have absolutely nothing in common.

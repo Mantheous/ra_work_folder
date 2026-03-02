@@ -11,10 +11,12 @@ import re
 from playwright.sync_api import sync_playwright
 sys.path.append("W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder")
 from Utilities.notifier import notify
-from urllib.parse import urlparse, urlencode, urlunparse, parse_qs
+from urllib.parse import urlparse, urlencode, urlunparse, parse_qsl
+
+DEFAULT_URL = "https://archives.creuse.fr"
 
 class CollumnNumbers:
-    def __init__(self, cote: int, commune: int, act_types: int, period: int, image_count: int):
+    def __init__(self, cote: int = 0, commune: int = 1, act_types: int = 2, period: int = 3, image_count: int = 4):
         self.cote = cote
         self.commune = commune
         self.act_types = act_types
@@ -41,9 +43,9 @@ class ArkaieScraper:
     """
     def __init__(
             self, 
-            root_link: str,
-            name: str, 
-            collumn_numbers: CollumnNumbers,
+            root_link: str = DEFAULT_URL,
+            name: str = "Default", 
+            collumn_numbers: CollumnNumbers = CollumnNumbers(),
             filter_link: str = None, # pyright: ignore[reportArgumentType]
             csv_location: str = None,  # pyright: ignore[reportArgumentType]
             results_per_page: int = 100, # I think that 100 will be faster
@@ -66,7 +68,7 @@ class ArkaieScraper:
         else:
             self.filter_link = filter_link
         if csv_location is None:
-            self.csv_location = f"ra_work_folder/Civil_Status/{name}/{name}.csv"
+            self.csv_location = f"W:/RA_work_folders/Ashton_Reed/ra_work_folder/Civil_Status/{name}/{name}.csv"
         else:
             self.csv_location = csv_location
 
@@ -87,6 +89,8 @@ class ArkaieScraper:
     
     # TODO if there are more than 10000 records, we need to run twice with different urls
     def run_main(self):
+        self.page_number = self.starting_page
+
         with sync_playwright() as pw:
             browser = pw.chromium.launch(headless=self.debug_config.headless)
             context = browser.new_context()
@@ -106,94 +110,68 @@ class ArkaieScraper:
                     self.recover_page_fail(e)
             
         notify(message=f"{self.name} scraper has finished", subject=f"{self.name} Finished")
-        
-    def url_for_page_number(self, page_number) -> str:
-        # 1. Extract the hex ID (the 'funny string')
-        # This regex looks for 'arko_default_' followed by alphanumeric characters
-        match = re.search(r'arko_default_([a-z0-9]+)', self.filter_link)
-        if not match:
+    
+    # I don't like that it use regex, but urlparse broke the query string
+    def url_for_page_number_filtered(self, page_number) -> str:
+        # 1. Identify the dynamic Arko ID prefix from the URL
+        # This matches 'arko_default_' followed by alphanumeric characters
+        arko_match = re.search(r'arko_default_[a-z0-9]+', self.filter_link)
+        if not arko_match:
             raise ValueError("Could not find the Arko ID in the base URL.")
         
-        arko_id = match.group(1)
-        prefix = f"arko_default_{arko_id}"
+        record_offset = (page_number - 1) * self.results_per_page
+
+        # 2. Define the patterns for 'from' and 'resultSize'
+        # These look for the key=value pair and capture the key part to keep it intact
+        from_pattern = rf'(--from=)[^&]*'
+        size_pattern = rf'(--resultSize=)[^&]*'
+
+        # 3. Perform the replacements
+        # \1 refers to the first captured group (the key name and the '=' sign)
+        new_url = re.sub(from_pattern, "--from=" + str(record_offset), self.filter_link)
+        new_url = re.sub(size_pattern, "--resultSize=" + str(self.results_per_page), new_url)
+
+        return new_url
+    
+    def url_for_page_number(self, page_number) -> str:
+        # 1. Parse the URL
+        parsed_url = urlparse(self.filter_link)
         
-        # 2. Calculate the 'from' offset
-        # Page 1 = 0, Page 2 = 25, Page 3 = 50
+        # 2. Use parse_qsl to get a LIST of (key, value) tuples.
+        # This preserves duplicates and the exact order.
+        query_pairs = parse_qsl(parsed_url.query, keep_blank_values=True)
+
+        # 3. Identify the prefix
+        arko_match = re.search(r'arko_default_[a-z0-9]+', self.filter_link)
+        if not arko_match:
+            raise ValueError("Could not find Arko ID")
+        prefix = arko_match.group(0)
+
+        # 4. Create the new list with updated pagination
+        # We rebuild the list, updating the specific pagination keys when we find them
         record_offset = (page_number - 1) * self.results_per_page
         
-        # 3. Construct the query parameters from scratch
-        query_params = {
-            f"{prefix}--ficheFocus": "",
-            f"{prefix}--from": str(record_offset),
-            f"{prefix}--resultSize": str(self.results_per_page)
-        }
-        
-        # 4. Strip the old query from the URL and attach the new one
-        parsed_url = urlparse(self.filter_link)
-        new_query = urlencode(query_params)
-        
-        # Rebuild the URL using the original path but our fresh query
-        return urlunparse(parsed_url._replace(query=new_query))
-  
-    # I need to migrate away from regex
-    # def jump_to_page(self, target_page: int):
-    #     # 1. Extract the hex ID (the 'funny string')
-    #     # This regex looks for 'arko_default_' followed by alphanumeric characters
-    #     match = re.search(r'arko_default_([a-z0-9]+)', self.filter_link)
-    #     if not match:
-    #         raise ValueError("Could not find the Arko ID in the base URL.")
-        
-    #     arko_id = match.group(1)
-    #     prefix = f"arko_default_{arko_id}"
-        
-    #     # 2. Calculate the 'from' offset
-    #     # Page 1 = 0, Page 2 = 25, Page 3 = 50
-    #     record_offset = (target_page - 1) * self.results_per_page
-        
-    #     # 3. Construct the query parameters from scratch
-    #     query_params = {
-    #         f"{prefix}--ficheFocus": "",
-    #         f"{prefix}--from": str(record_offset),
-    #         f"{prefix}--resultSize": str(self.results_per_page)
-    #     }
-        
-    #     # 4. Strip the old query from the URL and attach the new one
-    #     parsed_url = urlparse(self.filter_link)
-    #     new_query = urlencode(query_params)
-        
-    #     # Rebuild the URL using the original path but our fresh query
-    #     url = urlunparse(parsed_url._replace(query=new_query))
-    #     self.page.goto(url)
-
-    def jump_to_page(self, target_page: int):
-        # 1. Parse the existing URL
-        parsed_url = urlparse(self.filter_link)
-        
-        # 2. Convert the query string into a dictionary
-        # parse_qs returns lists for values, so we use keep_blank_values=True
-        query_params = parse_qs(parsed_url.query)
-
-        # 3. Find the dynamic Arko ID key (e.g., arko_default_61011...)
-        # This regex looks for 'arko_default_' followed by alphanumeric characters
-        arko_prefix = re.search(r'arko_default_([a-z0-9]+)', self.filter_link)
-        if not arko_prefix:
-            raise ValueError("Could not find the Arko ID in the base URL.")
-        # Get the actual prefix
-        arko_prefix = arko_prefix.group(0)
-
-        # 4. Update the pagination parameters
-        record_offset = (target_page - 1) * self.results_per_page
-        
-        # Update the dict (parse_qs values must be lists/tuples)
-        query_params[f"{arko_prefix}--from"] = [str(record_offset)]
-        query_params[f"{arko_prefix}--resultSize"] = [str(self.results_per_page)]
+        new_query_pairs = []
+        for key, value in query_pairs:
+            if key == f"{prefix}--from":
+                new_query_pairs.append((key, str(record_offset)))
+            elif key == f"{prefix}--resultSize":
+                new_query_pairs.append((key, str(self.results_per_page)))
+            else:
+                new_query_pairs.append((key, value))
 
         # 5. Rebuild the URL
-        # doseq=True is required to flatten the lists back into standard query pairs
-        new_query = urlencode(query_params, doseq=True)
-        new_url = urlunparse(parsed_url._replace(query=new_query))
+        # Doseq=False because we are passing a list of tuples, not a dict of lists
+        new_query = urlencode(new_query_pairs)
+        return urlunparse(parsed_url._replace(query=new_query))
 
-        self.page.goto(new_url)
+
+    def jump_to_page(self, target_page: int):
+        if self.root_link == self.filter_link:
+            self.page.goto(self.url_for_page_number(target_page))
+        else:
+            self.page.goto(self.url_for_page_number_filtered(target_page))
+
 
     def scrape_page(self, page_number: int, starting_row: int = 0):
         print(f"Page {page_number}:")
@@ -281,7 +259,7 @@ class ArkaieScraper:
 
     def write_row(self, i, cote, commune, period, act_types, image_count, href):
         # CSV format: department | page_number | row_number | cote | commune | period | act_types | image_count | href
-        row_data = f"{self.department}|{self.page_number}|{i}|{cote}|{commune.replace(" ", "_")}|{period.replace(" ", "_")}|{act_types.replace('\n', ', ').replace(" ", "_")}|{image_count}|{href}"
+        row_data = f"{self.department}|{self.page_number}|{i+1}|{cote}|{commune.strip().replace(" ", "_")}|{period.replace(" ", "_")}|{act_types.replace('\n', ', ').replace(" ", "_")}|{image_count}|{href}"
         with open(self.csv_location, "a", encoding="utf-8") as f:
             f.write(row_data + "\n")
         
@@ -310,14 +288,3 @@ class ArkaieScraper:
             exit()
         self.jump_to_page(self.page_number)
     
-    def get_communes(self, page) -> list:
-        page.locator('//*[@id="volet-de-filtres-arko_default_62289d8b205f4"]/div[2]/div').click()
-        page.locator('//*[@id="aria-filtre-arko_default_62289f0b500e6"]/div[1]/button').click()
-        letters = page.locator("//body/div[4]/nav/ul")
-        lines = []
-        for i in range(3):
-            letters.locator("li").nth(i).click()
-            text = page.locator('//body/div[4]/div[1]').inner_text()
-            lines.append(text)
-
-        return lines
