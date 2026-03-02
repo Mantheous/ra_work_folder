@@ -8,10 +8,10 @@
 
 import sys
 import re
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import sync_playwright
 sys.path.append("W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder")
 from Utilities.notifier import notify
-from urllib.parse import urlparse, urlencode, urlunparse
+from urllib.parse import urlparse, urlencode, urlunparse, parse_qs
 
 class CollumnNumbers:
     def __init__(self, cote: int, commune: int, act_types: int, period: int, image_count: int):
@@ -28,10 +28,11 @@ class DebugConfig:
     Raise exceptions: When you are doing a full run it will likely still time out ocasionally. You want to keep going
     despite those error, but when you are testing, you want to know about those errors so you can fix them.
     """
-    def __init__(self, headless: bool, one_per_page: bool = False, raise_exceptions: bool = False):
+    def __init__(self, headless: bool, one_per_page: bool = False, raise_exceptions: bool = False, stoping_page: int = None): # pyright: ignore[reportArgumentType]
         self.headless = headless
         self.one_per_page = one_per_page
         self.raise_exceptions = raise_exceptions
+        self.stoping_page = stoping_page
 
 # TODO: add stopping point. For testing
 class ArkaieScraper:
@@ -40,21 +41,30 @@ class ArkaieScraper:
     """
     def __init__(
             self, 
-            root_link: str, 
+            root_link: str,
             name: str, 
             collumn_numbers: CollumnNumbers,
-            csv_location: str = None,
+            filter_link: str = None, # pyright: ignore[reportArgumentType]
+            csv_location: str = None,  # pyright: ignore[reportArgumentType]
             results_per_page: int = 100, # I think that 100 will be faster
             starting_page: int = 1, 
             starting_index: int = 0, 
             max_tries: int = 5, 
-            debug_config: DebugConfig = DebugConfig(headless=False, one_per_page=False),
-            department: str = None
+            debug_config: DebugConfig = DebugConfig(
+                    headless=False, 
+                    one_per_page=False, 
+                    stoping_page=None # pyright: ignore[reportArgumentType]
+                ), 
+            department: str = None  # pyright: ignore[reportArgumentType]
         ):
         self.root_link = root_link
         self.name = name
         self.collumn_numbers = collumn_numbers
 
+        if filter_link is None:
+            self.filter_link = self.root_link
+        else:
+            self.filter_link = filter_link
         if csv_location is None:
             self.csv_location = f"ra_work_folder/Civil_Status/{name}/{name}.csv"
         else:
@@ -85,6 +95,8 @@ class ArkaieScraper:
             self.number_of_records = int(self.page.locator('div.nombre_resultat_facettes').first.inner_text().replace('\u202f', '').split()[0])
 
             while(self.page_number <= (self.number_of_records // self.results_per_page) + 1):
+                if self.debug_config.stoping_page is not None and self.page_number > self.debug_config.stoping_page:
+                    exit()
                 try:
                     self.scrape_page(self.page_number)
                     self.page_number += 1
@@ -98,7 +110,7 @@ class ArkaieScraper:
     def url_for_page_number(self, page_number) -> str:
         # 1. Extract the hex ID (the 'funny string')
         # This regex looks for 'arko_default_' followed by alphanumeric characters
-        match = re.search(r'arko_default_([a-z0-9]+)', self.root_link)
+        match = re.search(r'arko_default_([a-z0-9]+)', self.filter_link)
         if not match:
             raise ValueError("Could not find the Arko ID in the base URL.")
         
@@ -117,40 +129,71 @@ class ArkaieScraper:
         }
         
         # 4. Strip the old query from the URL and attach the new one
-        parsed_url = urlparse(self.root_link)
+        parsed_url = urlparse(self.filter_link)
         new_query = urlencode(query_params)
         
         # Rebuild the URL using the original path but our fresh query
         return urlunparse(parsed_url._replace(query=new_query))
   
+    # I need to migrate away from regex
+    # def jump_to_page(self, target_page: int):
+    #     # 1. Extract the hex ID (the 'funny string')
+    #     # This regex looks for 'arko_default_' followed by alphanumeric characters
+    #     match = re.search(r'arko_default_([a-z0-9]+)', self.filter_link)
+    #     if not match:
+    #         raise ValueError("Could not find the Arko ID in the base URL.")
+        
+    #     arko_id = match.group(1)
+    #     prefix = f"arko_default_{arko_id}"
+        
+    #     # 2. Calculate the 'from' offset
+    #     # Page 1 = 0, Page 2 = 25, Page 3 = 50
+    #     record_offset = (target_page - 1) * self.results_per_page
+        
+    #     # 3. Construct the query parameters from scratch
+    #     query_params = {
+    #         f"{prefix}--ficheFocus": "",
+    #         f"{prefix}--from": str(record_offset),
+    #         f"{prefix}--resultSize": str(self.results_per_page)
+    #     }
+        
+    #     # 4. Strip the old query from the URL and attach the new one
+    #     parsed_url = urlparse(self.filter_link)
+    #     new_query = urlencode(query_params)
+        
+    #     # Rebuild the URL using the original path but our fresh query
+    #     url = urlunparse(parsed_url._replace(query=new_query))
+    #     self.page.goto(url)
+
     def jump_to_page(self, target_page: int):
-        # 1. Extract the hex ID (the 'funny string')
+        # 1. Parse the existing URL
+        parsed_url = urlparse(self.filter_link)
+        
+        # 2. Convert the query string into a dictionary
+        # parse_qs returns lists for values, so we use keep_blank_values=True
+        query_params = parse_qs(parsed_url.query)
+
+        # 3. Find the dynamic Arko ID key (e.g., arko_default_61011...)
         # This regex looks for 'arko_default_' followed by alphanumeric characters
-        match = re.search(r'arko_default_([a-z0-9]+)', self.root_link)
-        if not match:
+        arko_prefix = re.search(r'arko_default_([a-z0-9]+)', self.filter_link)
+        if not arko_prefix:
             raise ValueError("Could not find the Arko ID in the base URL.")
-        
-        arko_id = match.group(1)
-        prefix = f"arko_default_{arko_id}"
-        
-        # 2. Calculate the 'from' offset
-        # Page 1 = 0, Page 2 = 25, Page 3 = 50
+        # Get the actual prefix
+        arko_prefix = arko_prefix.group(0)
+
+        # 4. Update the pagination parameters
         record_offset = (target_page - 1) * self.results_per_page
         
-        # 3. Construct the query parameters from scratch
-        query_params = {
-            f"{prefix}--ficheFocus": "",
-            f"{prefix}--from": str(record_offset),
-            f"{prefix}--resultSize": str(self.results_per_page)
-        }
-        
-        # 4. Strip the old query from the URL and attach the new one
-        parsed_url = urlparse(self.root_link)
-        new_query = urlencode(query_params)
-        
-        # Rebuild the URL using the original path but our fresh query
-        url = urlunparse(parsed_url._replace(query=new_query))
-        self.page.goto(url)
+        # Update the dict (parse_qs values must be lists/tuples)
+        query_params[f"{arko_prefix}--from"] = [str(record_offset)]
+        query_params[f"{arko_prefix}--resultSize"] = [str(self.results_per_page)]
+
+        # 5. Rebuild the URL
+        # doseq=True is required to flatten the lists back into standard query pairs
+        new_query = urlencode(query_params, doseq=True)
+        new_url = urlunparse(parsed_url._replace(query=new_query))
+
+        self.page.goto(new_url)
 
     def scrape_page(self, page_number: int, starting_row: int = 0):
         print(f"Page {page_number}:")
@@ -267,3 +310,14 @@ class ArkaieScraper:
             exit()
         self.jump_to_page(self.page_number)
     
+    def get_communes(self, page) -> list:
+        page.locator('//*[@id="volet-de-filtres-arko_default_62289d8b205f4"]/div[2]/div').click()
+        page.locator('//*[@id="aria-filtre-arko_default_62289f0b500e6"]/div[1]/button').click()
+        letters = page.locator("//body/div[4]/nav/ul")
+        lines = []
+        for i in range(3):
+            letters.locator("li").nth(i).click()
+            text = page.locator('//body/div[4]/div[1]').inner_text()
+            lines.append(text)
+
+        return lines

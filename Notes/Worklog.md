@@ -122,3 +122,13 @@ I am finishing up the day and I have a downloader that is running. I think it's 
 ## 03-02-2026
 
 Upon arriving to the lab, to my suprise the downloader still seemed to be running. It is concerning to me how hard it is to see if the scraper is actually running. I will have to change the debug system. I like that it tells me which links it had time outs on. But it's not like the link extractor where I can see each file getting added. Okay, I actually was able to find the folder it was working on and it's fast. Like absurdly fast. Like it probably is getting an image every 4 seconds. Yeah I think the math leads an average of about 4.12 seconds per file. I think that is pretty good to be honest
+
+### Cursor
+I ran out of inline completions so I moved over to cursor. So far it is actually pretty smooth. I am not sure what models I am using, but I kind of assume its gemini
+
+### Filtered Scraper
+So implementing a filtered sraper is proving more difficult than I thought. I can't just inject the filter easily.
+Well actually I can inject it easily. I would need to modify how my jump to page function works in the general scraper, but it's not crazy complicated. Now what is hard is figuring out what the search filter is. Its not easily manipulatable in the url. I can find which querey specifies the commune, but when I grab my current url for some reason it is missing the queries I need. It even has some queries, it's just missing some.
+
+### Testing
+I set up a basic test for the Aube2 scrapper. It seems to work, because well the test doesn't pass and my codes broken :)
