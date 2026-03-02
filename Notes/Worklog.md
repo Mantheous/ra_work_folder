@@ -104,3 +104,21 @@ There were a few errors still in the Aube2 scraper that I had to work out.
 If I choose a feature and then filter for and and except I can split the data set in two. Makayla sugested the original Aube2 approach which just filtered by commune. This method has some complexities though. If you search up the commune there is overlap some times. Also there are records that are not listed under one of those filters. These can be found by filtering for all the communes with except.
 ![alt text](image.png)
 This shows that being applied in Aube2. There are 82 records that do not show under their filters but are actually labeled. Using the [[Temp/examine.py]] I can verify that we do indeed have all of the records accounted for if we include those last 82. This means that this approuch is valid at least for aube2. To run a scrape filtered by commune, we need to rely on the table over the filter qualification.
+
+## 02-26-2026
+
+### Aube2
+
+It finished scraping! It looks like it had a small error where it did not scrape the last page. I think that possibly that was why we were missing ten reocords in the original scrape. But it was really easy to see where it had problems because it indexes them in the CSV. That was a huge improvement for QA. So now I have fixed the base scraper and all of my scrapers... well, I haven't used the class for much else yet. But with in the next five minutes we should have Aube2 done and I will be able to say with complete confidence that we have all of the records.
+
+### Next steps
+
+It is probably good to work out the cinks in the pipeline before we get too invested with the scrapers. I actually made a pipeline file. I am not sure if I really want to do this yet. There are just some things that I really want to be human validated right now and it doesn't make sense to automate the whole process if we plan on inturupting it. However if this is ever going to become what I want it to be I need to address this issue.
+
+I wonder if I could call each instance of curl on it's own thread. I think I could, but I don't think I should.
+
+I am finishing up the day and I have a downloader that is running. I think it's going to work. I was working through the cinks for quite some time with gemini. I need to refactor the downloader a bit.
+
+## 03-02-2026
+
+Upon arriving to the lab, to my suprise the downloader still seemed to be running. It is concerning to me how hard it is to see if the scraper is actually running. I will have to change the debug system. I like that it tells me which links it had time outs on. But it's not like the link extractor where I can see each file getting added. Okay, I actually was able to find the folder it was working on and it's fast. Like absurdly fast. Like it probably is getting an image every 4 seconds. Yeah I think the math leads an average of about 4.12 seconds per file. I think that is pretty good to be honest

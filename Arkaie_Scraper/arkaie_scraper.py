@@ -73,6 +73,7 @@ class ArkaieScraper:
         self.tries = 0
         self.debug_config = debug_config
         self.page_number = starting_page
+        self.number_of_records = None
     
     # TODO if there are more than 10000 records, we need to run twice with different urls
     def run_main(self):
@@ -81,9 +82,9 @@ class ArkaieScraper:
             context = browser.new_context()
             self.page = context.new_page()
             self.jump_to_page(self.page_number)
-            number_of_records = int(self.page.locator('div.nombre_resultat_facettes').first.inner_text().replace('\u202f', '').split()[0])
+            self.number_of_records = int(self.page.locator('div.nombre_resultat_facettes').first.inner_text().replace('\u202f', '').split()[0])
 
-            while(self.page_number <= (number_of_records // self.results_per_page) + 1):
+            while(self.page_number <= (self.number_of_records // self.results_per_page) + 1):
                 try:
                     self.scrape_page(self.page_number)
                     self.page_number += 1
@@ -237,7 +238,7 @@ class ArkaieScraper:
 
     def write_row(self, i, cote, commune, period, act_types, image_count, href):
         # CSV format: department | page_number | row_number | cote | commune | period | act_types | image_count | href
-        row_data = f"{self.department}|{self.page_number}|{i}|{cote}|{commune}|{period}|{act_types.replace('\n', ', ')}|{image_count}|{href}"
+        row_data = f"{self.department}|{self.page_number}|{i}|{cote}|{commune.replace(" ", "_")}|{period.replace(" ", "_")}|{act_types.replace('\n', ', ').replace(" ", "_")}|{image_count}|{href}"
         with open(self.csv_location, "a", encoding="utf-8") as f:
             f.write(row_data + "\n")
         

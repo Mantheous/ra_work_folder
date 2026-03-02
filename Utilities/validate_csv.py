@@ -6,16 +6,17 @@ import pandas as pd
 # results should be edge cases that are impossible to find until we have processed the data
 # that can be resolved manually with ease.
 
-def verify_unique_by_index(file_path, col_index):
+# High quality record:
+# - Has no missing values
+# - Has a unique URL (we don't want duplicates)
+# - Can be traced back to the source
+
+def validate(file_path, number_of_records=None):
     try:
         # Load file with the pipe delimiter
-        column_headers = ['page','index','Cote', 'Commune', 'Date_Range', 'Record_Type', 'Count', 'URL']
+        column_headers = ['Department','Page','Index','Cote', 'Commune', 'Date_Range', 'Record_Type', 'Count', 'URL']
         df = pd.read_csv(file_path, header=None, delimiter='|', names=column_headers)
         
-        # Validate index range
-        if col_index >= len(df.columns):
-            print(f"Error: Index {col_index} is out of bounds. File only has {len(df.columns)} columns.")
-            return
         
         # Check for empty cells
         nan_rows = df[df.isna().any(axis=1)]
@@ -26,39 +27,37 @@ def verify_unique_by_index(file_path, col_index):
             print(f"❌ Found {len(nan_rows)} rows with missing values:\n")
             print(nan_rows)
 
-        # Make sure the date is a date
-        # I guess that "An X" is a valid date
-        # regex_pattern = r'[^0-9\s-]' # This pattern matches any character that is not a digit, whitespace, or hyphen
-        # invalid_date_rows = df[df['Date_Range'].str.contains(regex_pattern, na=False)]
-        # if len(invalid_date_rows) == 0:
-        #     print("✅ All date ranges are valid.")
-        # else:
-        #     print(f"❌ Found {len(invalid_date_rows)} rows with invalid date ranges:\n")
-        #     print(invalid_date_rows)
-
         # Verify each link is unique
-        target_col = df.iloc[:, col_index]
-        
-        if target_col.is_unique:
-            print(f"✅ Success: Column at index {col_index} is unique.")
+        if df['URL'].is_unique:
+            print(f"✅ Success: URL column is unique.")
         else:
             # Get counts of all values
-            counts = target_col.value_counts()
+            counts = df['URL'].value_counts()
             
             # Filter to only include values that appear more than once
             duplicates = counts[counts > 1]
             
-            print(f"❌ Failed: Found {len(duplicates)} distinct values with duplicates at index {col_index}.\n")
+            print(f"❌ Failed: Found {len(duplicates)} distinct URLs with duplicates.\n")
             print(f"{'Value':<30} | {'Occurrences':<10}")
             print("-" * 45)
             
             for value, count in duplicates.items():
-                print(f"Link: {str(value):<30} | Count: {count:<10} | Commune: {df[df.iloc[:, col_index] == value].iloc[0, 1]}")
+                print(f"Link: {str(value):<30} | Count: {count:<10} | Commune: {df[df['URL'] == value].iloc[0, 1]}")
 
-            print(f"❌ Failed: Found {len(duplicates)} distinct values with duplicates at index {col_index}.\n")
+            print(f"❌ Failed: Found {len(duplicates)} distinct URLs with duplicates.\n")
+        
+        # Check that we have the expected number of records
+        if number_of_records is not None:
+            actual_count = len(df)
+            if actual_count == number_of_records:
+                print(f"✅ Success: Found expected number of records ({number_of_records}).")
+            else:
+                print(f"❌ Failed: Expected {number_of_records} records, but found {actual_count}.")
+
+        # TODO - Trace back first record, second on the second page, and last record
     except FileNotFoundError:
         print(f"Error: File '{file_path}' not found.")
     
 
 if __name__ == "__main__":
-    verify_unique_by_index('ra_work_folder/Utilities/validation_test.csv', 7)
+    validate('ra_work_folder/Utilities/validation_test.csv', 2084)
