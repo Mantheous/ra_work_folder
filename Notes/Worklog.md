@@ -163,3 +163,22 @@ The filtering is actually worse than I thought. There are records that show up o
 
 I was talking with my roomate about this project. He has a much deeper understanding of web dev and networking stuff than I do. He had some interesting insights. We were able to find a response that contained the table and some of the nesscesary data to construct a url for downloading the image. We found that one of the parts of the download url is the image resolution. That could be huge for speeding up downloads. I would need to talk with the vision team. Low key, I just need to talk with them so I can understand how they are doing stuff.
 Also I just need to email the departments and ask them for the data.
+
+## 03-04-2026
+
+### Cher
+Cher is scraping links right now. I am not sure why it crashed. It seems like it just had a time out which mean I need to increase the retries. Once it finishes I need to manually run the extras. The commune split will be the last resort in the future. I believe I saw a page that needed to be split by commune though so It's not a waste of time. It's just really hard to validate.
+
+### Aube2
+The downloader is still running. At it's current speed it should be done by the end of the week. That is far too slow. Lincon thought that I don't need to hold back at all on how many downloads I do at a time. I will try doing it at 100 at a time, which would effectively shorten the run time down to a day. Actually it is still going to be super slow. At 100X the speed we can hit about 2 million pages a day. Cher is estimated to have 1.8 million pages. So it will take about a day to download all of the pages from cher at 100x. I think it is possible to do higher. I may even try to do them all at the same time. Well that would definently be beyond the capacity of this one computer and using multiple is really turning to a DOS attack.
+I accidently exited the script so I am going to start working on the downloader.
+I made the downloader async. OMG it's blazing fast. I am downloading multiple per second. Which is honestly still not that fast. I am going to try running it on a higher concurency next time. We'll see if it can do 200. It's currently doing about 3 a second instead of one every 4 seconds. It is causing the server to get really slow though. I reset it to 20X and it's actually getting the same speed it seems. So that's good. And the website still runs probably like normal.
+
+### Creuse
+I started up creuse again. This time I split on marriage. It was super easy to implement especially because the main changes that the scraper needed had already been implemented because of the Cher scraper. Litteraly it took five minutes to get it ready to run.
+
+### Dordogne
+This one is just going to be a nasty animal. It has +200000 records. If we are going to split it by commune, which might be nessecary. We could split it on time period but that would still require 20 splits. And I don't know if time period is going to be any more reliable than by commune. I know that splitting it on commune is not reliable.
+
+### Eure-et-Loire
+Eure-et-Loire is only missing one record if you split by commune. That means that if we can do the not commune filter we should only have 1 result.

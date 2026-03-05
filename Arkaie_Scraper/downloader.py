@@ -1,55 +1,93 @@
 import os
 import piexif
 import pandas as pd
-import requests
+import asyncio
+import aiohttp
+import logging
 
 FRI_FOLDER_PATH = "ra_work_folder/Civil_Status/Results" #"W:\\papers\\curent\\french_records\\french_record_images\\"
 SHORT_URL = "https://www.archives-aube.fr/"
+CONCURRENCY_LIMIT = 20
 
 # Path: W:\papers\curent\french_records\french_record_images\{Department (Name)}\{Record_types}\{Commune}\{Period}\{Department}_{Record_types}_{Commune}_{Batch}_{page}
 
-def download(file_path):
+# Setup Logging for Failed Downloads
+logging.basicConfig(
+    filename='failed_downloads.log',
+    level=logging.ERROR,
+    format='%(asctime)s - %(message)s'
+)
+
+async def download_page(session, semaphore, mod_link, download_path, cote):
+    """Handles the actual download of a single image."""
+    async with semaphore:
+        try:
+            async with session.get(mod_link, timeout=60) as response:
+                if response.status == 200:
+                    content = await response.read()
+                    
+                    # Save binary content (Blocking I/O, but small enough usually)
+                    with open(download_path, 'wb') as f:
+                        f.write(content)
+                    
+                    # Metadata (Running in thread to keep loop moving)
+                    await asyncio.to_thread(insert_metadata, download_path, cote, SHORT_URL)
+                    logging.info(f"Downloaded | {mod_link}")
+                else:
+                    logging.error(f"HTTP {response.status} | {mod_link}")
+        except Exception as e:
+            logging.error(f"Failed | {mod_link} | Error: {str(e)}")
+
+async def run_downloader(file_path):
 
     column_headers = ['department','page','index','cote', 'commune', 'period', 'record_type', 'count', 'url']
     df = pd.read_csv(file_path, header=None, delimiter='|', names=column_headers)
-    for row in df.itertuples():
-        # Sanitize each component to remove spaces
-        # TODO Remove this after Aube2 is scraped. I fixed it upstream
-        dept = str(row.department).replace(" ", "_")
-        r_type = str(row.record_type).replace(" ", "_")
-        commune = str(row.commune).replace(" ", "_")
-        period = str(row.period).replace(" ", "_")
+    
+    semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)
 
-        # check to see if there is already a file with the same path
-        folder_path = os.path.join(FRI_FOLDER_PATH, dept, r_type, commune, period)
-        os.makedirs(folder_path, exist_ok=True)
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for row in df.itertuples():
+            # Sanitize each component to remove spaces
+            # TODO Remove this after Aube2 is scraped. I fixed it upstream
+            dept = str(row.department).replace(" ", "_")
+            r_type = str(row.record_type).replace(" ", "_")
+            commune = str(row.commune).replace(" ", "_")
+            period = str(row.period).replace(" ", "_")
 
-        batch = 0 
-        base_filename = f"{dept}_{r_type}_{commune}_"
-        
-        # Determine batch number
-        while os.path.isfile(os.path.join(folder_path, f"{base_filename}{batch}_0.jpg")):
-            batch += 1
+            # check to see if there is already a file with the same path
+            folder_path = os.path.join(FRI_FOLDER_PATH, dept, r_type, commune, period)
+            os.makedirs(folder_path, exist_ok=True)
 
-        for page in range(row.count):
-            mod_link = row.url.replace("/0/full", f"/{page}/full")
-            download_path = os.path.join(folder_path, f"{base_filename}{batch}_{page}.jpg")
-            try:
-                # 1. Download image
-                response = requests.get(mod_link, timeout=30)
-                response.raise_for_status() # Check for 404, 500, etc.
+            batch = 0 
+            base_filename = f"{dept}_{r_type}_{commune}_"
+            
+            # Determine batch number
+            while os.path.isfile(os.path.join(folder_path, f"{base_filename}{batch}_0.jpg")):
+                batch += 1
 
-                # 2. Save binary content
-                with open(download_path, 'wb') as f:
-                    f.write(response.content)
+            for page in range(row.count):
+                mod_link = row.url.replace("/0/full", f"/{page}/full")
+                download_path = os.path.join(folder_path, f"{base_filename}{batch}_{page}.jpg")
+                tasks.append(download_page(session, semaphore, mod_link, download_path, row.cote))
+                # try:
+                #     # 1. Download image
+                #     response = requests.get(mod_link, timeout=30)
+                #     response.raise_for_status() # Check for 404, 500, etc.
 
-                # 3. Metadata
-                insert_metadata(image_path=download_path, cote=row.cote, url=SHORT_URL)
+                #     # 2. Save binary content
+                #     with open(download_path, 'wb') as f:
+                #         f.write(response.content)
 
-            except requests.exceptions.RequestException as e:
-                print(f"Failed to download page {page} at {mod_link}: {e}")
-            except Exception as e:
-                print(f"Error processing page {page}: {e}")
+                #     # 3. Metadata
+                #     insert_metadata(image_path=download_path, cote=row.cote, url=SHORT_URL)
+
+                # except requests.exceptions.RequestException as e:
+                #     print(f"Failed to download page {page} at {mod_link}: {e}")
+                # except Exception as e:
+                #     print(f"Error processing page {page}: {e}")
+
+        await asyncio.gather(*tasks)
 
 
 def insert_metadata(image_path, cote, url):
@@ -75,4 +113,5 @@ def insert_metadata(image_path, cote, url):
     piexif.insert(exif_bytes, image_path)
 
 if __name__ == "__main__":
-    download('ra_work_folder\Civil_Status\Aube2\Aube2_cleaned.csv')
+    csv_path ='ra_work_folder/Civil_Status/Aube2/Aube2_progress.csv'
+    asyncio.run(run_downloader(csv_path))

@@ -1,27 +1,30 @@
 # this generates the list of all the communes that have records
 
-from playwright.sync_api import sync_playwright, expect
 import re
 import pandas as pd
+from Utilities.browser_utils import load_browser
+from Arkaie_Scraper.commun_tools import navigate_to_commune_list, get_letters
+
+def navigate_to_commune_list(page):
+    # for some sites the button is hidden
+    try:
+        page.get_by_label('Consulter la liste').first.click()
+    except:
+        commune_search = page.get_by_label(re.compile(r"Commune", re.IGNORECASE))
+        if commune_search.count() == 1:
+            commune_search.click()        
+        page.get_by_label('Consulter la liste').first.click()
 
 def retrieve_communes(link: str, out_file = None) -> pd.DataFrame:
     df = pd.DataFrame(columns= ["communs", "record_count"])
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=False)
-        context = browser.new_context()
-        page = context.new_page()
+    with load_browser(headless=False) as page:
         page.goto(link)
         
-        # for each letter that has communes...
-        # for some sites the button is hidden
-        commune_search = page.get_by_label(re.compile(r"Commune", re.IGNORECASE))
-        if commune_search.count() == 1:
-            commune_search.click()
-        page.get_by_label('Consulter la liste').click()
-        letters = page.locator("//body/div[4]/nav/ul")
+        navigate_to_commune_list(page)
+        letters = get_letters(page)
         for i in range(letters.locator("li").count()):
             letters.locator("li").nth(i).click()
-            text = page.locator('//body/div[4]/div[1]').inner_text()
+            text = page.locator('.filtre_liste_popup_liste').inner_text()
             communes = text.split("\n")[::2]
             counts = text.split("\n")[1::2]
             counts = [int(x) for x in counts]
@@ -33,7 +36,7 @@ def retrieve_communes(link: str, out_file = None) -> pd.DataFrame:
 
 if __name__ == "__main__":
     
-    root_link = 'https://www.archives-aube.fr/recherches/documents-numerises/genealogie/tout-letat-civil/etat-civil-de-la-ville-de-troyes-1535-1919?arko_default_62289d8b205f4--ficheFocus='
+    root_link = 'https://archives28.fr/archives-et-inventaires-en-ligne/histoire-des-individus-des-populations-et-genealogie/les-registres-paroissiaux-et-detat-civil?arko_default_6241bc24d7427--ficheFocus='
 
     # file_name = "Aube_Civil_Status/Aube_Communes_and_Count.csv"
     results = retrieve_communes(root_link)

@@ -1,18 +1,18 @@
 # TODO
 - [ ] Follow up on Aube1
 - [ ] Find new approach to  scraping 20000+ record sites
-    - [ ] One option is to do it by commune and then just dedupe. This make validation very difficult though.
-- [x] Rescrape Aube2
+    - [x] One option is to do it by commune and then just dedupe. This make validation very difficult though.
 - [ ] Revise the [downloader.py](Utilities/downloader.py)
 - [ ] Create an async scraper
 - [ ] Reimplement other scrapers
-    - [ ] Cher
-    - [ ] Creuse
+    - [x] Cher
+    - [x] Creuse
+        - Definently split on marriages. That way I can just run an almost unmodified scrapper that just has two starting urls. It's much easier to validate because it only has two with marraiges, and without.
     - [ ] Dordogne
+        - Waiting on response from them. Mostly trying to see if maybe I can just not scrape it.
     - [ ] Eure-et-Loir
     - [ ] Indre
     - [ ] Landes
     - [ ] Loiret
     - [ ] Saint Etienne
-- [x] update the .gitignore so the scraped files are not uploaded to the repo
 - [ ] Develop a process for handling the edge cases on validating the data

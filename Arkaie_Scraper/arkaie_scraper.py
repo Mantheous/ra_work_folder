@@ -8,9 +8,10 @@
 
 import sys
 import re
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError
 sys.path.append("W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder")
 from Utilities.notifier import notify
+from Utilities.browser_utils import load_browser
 from urllib.parse import urlparse, urlencode, urlunparse, parse_qsl
 
 DEFAULT_URL = "https://archives.creuse.fr"
@@ -30,11 +31,12 @@ class DebugConfig:
     Raise exceptions: When you are doing a full run it will likely still time out ocasionally. You want to keep going
     despite those error, but when you are testing, you want to know about those errors so you can fix them.
     """
-    def __init__(self, headless: bool, one_per_page: bool = False, raise_exceptions: bool = False, stoping_page: int = None): # pyright: ignore[reportArgumentType]
+    def __init__(self, headless: bool, one_per_page: bool = False, raise_exceptions: bool = False, stoping_page: int = None, notify_crash: bool = True): # pyright: ignore[reportArgumentType]
         self.headless = headless
         self.one_per_page = one_per_page
         self.raise_exceptions = raise_exceptions
         self.stoping_page = stoping_page
+        self.notify_crash = notify_crash
 
 # TODO: add stopping point. For testing
 class ArkaieScraper:
@@ -80,6 +82,7 @@ class ArkaieScraper:
             
         self.results_per_page = results_per_page
         self.starting_page = starting_page
+        assert starting_page > 0
         self.starting_index = starting_index
         self.max_tries = max_tries
         self.tries = 0
@@ -87,20 +90,21 @@ class ArkaieScraper:
         self.page_number = starting_page
         self.number_of_records = None
     
-    # TODO if there are more than 10000 records, we need to run twice with different urls
     def run_main(self):
         self.page_number = self.starting_page
 
-        with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=self.debug_config.headless)
-            context = browser.new_context()
-            self.page = context.new_page()
+        with load_browser(headless=self.debug_config.headless) as page:
+            self.page = page
             self.jump_to_page(self.page_number)
-            self.number_of_records = int(self.page.locator('div.nombre_resultat_facettes').first.inner_text().replace('\u202f', '').split()[0])
+            try:
+                self.number_of_records = int(self.page.locator('div.nombre_resultat_facettes').first.inner_text().replace('\u202f', '').split()[0])
+            except TimeoutError:
+                # On some pages if there is only one result it just doesn't show them.
+                self.number_of_records = 1
 
             while(self.page_number <= (self.number_of_records // self.results_per_page) + 1):
                 if self.debug_config.stoping_page is not None and self.page_number > self.debug_config.stoping_page:
-                    exit()
+                    return
                 try:
                     self.scrape_page(self.page_number)
                     self.page_number += 1
@@ -134,35 +138,31 @@ class ArkaieScraper:
         return new_url
     
     def url_for_page_number(self, page_number) -> str:
-        # 1. Parse the URL
-        parsed_url = urlparse(self.filter_link)
+        # 1. Extract the hex ID (the 'funny string')
+        # This regex looks for 'arko_default_' followed by alphanumeric characters
+        match = re.search(r'arko_default_([a-z0-9]+)', self.root_link)
+        if not match:
+            raise ValueError("Could not find the Arko ID in the base URL.")
         
-        # 2. Use parse_qsl to get a LIST of (key, value) tuples.
-        # This preserves duplicates and the exact order.
-        query_pairs = parse_qsl(parsed_url.query, keep_blank_values=True)
-
-        # 3. Identify the prefix
-        arko_match = re.search(r'arko_default_[a-z0-9]+', self.filter_link)
-        if not arko_match:
-            raise ValueError("Could not find Arko ID")
-        prefix = arko_match.group(0)
-
-        # 4. Create the new list with updated pagination
-        # We rebuild the list, updating the specific pagination keys when we find them
+        arko_id = match.group(1)
+        prefix = f"arko_default_{arko_id}"
+        
+        # 2. Calculate the 'from' offset
+        # Page 1 = 0, Page 2 = 25, Page 3 = 50
         record_offset = (page_number - 1) * self.results_per_page
         
-        new_query_pairs = []
-        for key, value in query_pairs:
-            if key == f"{prefix}--from":
-                new_query_pairs.append((key, str(record_offset)))
-            elif key == f"{prefix}--resultSize":
-                new_query_pairs.append((key, str(self.results_per_page)))
-            else:
-                new_query_pairs.append((key, value))
-
-        # 5. Rebuild the URL
-        # Doseq=False because we are passing a list of tuples, not a dict of lists
-        new_query = urlencode(new_query_pairs)
+        # 3. Construct the query parameters from scratch
+        query_params = {
+            f"{prefix}--ficheFocus": "",
+            f"{prefix}--from": str(record_offset),
+            f"{prefix}--resultSize": str(self.results_per_page)
+        }
+        
+        # 4. Strip the old query from the URL and attach the new one
+        parsed_url = urlparse(self.root_link)
+        new_query = urlencode(query_params)
+        
+        # Rebuild the URL using the original path but our fresh query
         return urlunparse(parsed_url._replace(query=new_query))
 
 
@@ -171,6 +171,7 @@ class ArkaieScraper:
             self.page.goto(self.url_for_page_number(target_page))
         else:
             self.page.goto(self.url_for_page_number_filtered(target_page))
+        self.wait_for_load()
 
 
     def scrape_page(self, page_number: int, starting_row: int = 0):
