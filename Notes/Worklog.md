@@ -217,5 +217,8 @@ Missing image finder
 - If there should be multiple batches and there aren't print that as well.
 - Create a csv file formated like missed_pages.csv
 
+### Models
+I think I finnaly found a way to have a good coding model. With antigravity I can have anthropic models which honestly are way better than gemini. It is so game changing to have stuff just work. I often found myself putting in more work to do the process with gemini than I would manually.
+
 ### New clean up stratagy
 The biggest problem is how we are storing our data. The current error is the file name is not unique enough. You can have two seperate records that cover the same type of event in the same time period. From the file name and path there should be enough information to identify it. In order to figure out what batch it should be you have to resimulate it's creation, but it's batch is dependent on what is already in the folder. This is not good. Where I am still missing 6000+ images I need to be able to validate that the downloads are correct. 
