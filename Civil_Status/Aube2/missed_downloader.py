@@ -69,18 +69,18 @@ async def run_downloader(file_path):
             folder_path = os.path.join(FRI_FOLDER_PATH, dept, r_type, commune, period)
             os.makedirs(folder_path, exist_ok=True)
 
-            batch = 0 
+            batch = 0
             base_filename = f"{dept}_{r_type}_{commune}_"
-            
-            # Determine batch number (same logic as original downloader)
-            while os.path.isfile(os.path.join(folder_path, f"{base_filename}{batch}_0.jpg")):
+            page_idx = row.count
+
+            # Determine batch number. use page_idx to find the batch
+            while os.path.isfile(os.path.join(folder_path, f"{base_filename}{batch}_{page_idx}.jpg")):
                 batch += 1
 
             # Use column 8 (row.count) for the filename page index
-            page_idx = row.count
             mod_link = row.url
             download_path = os.path.join(folder_path, f"{base_filename}{batch}_{page_idx}.jpg")
-            
+
             tasks.append(download_page(session, semaphore, mod_link, download_path, row.cote))
 
         await asyncio.gather(*tasks)
