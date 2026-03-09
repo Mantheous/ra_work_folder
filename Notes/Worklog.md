@@ -196,3 +196,21 @@ I made a bunch of files today that I don't actually want to keep. I tried to mak
 
 ## 03-09-2026
 
+### The mud
+
+I spent a lot of time doing something I had already done on friday. Once I realized that I already had the csv file I wanted I then spent a sec to find that the missing downloader was working perfectly as well. I have ran it and well, it seems great. The only problem is that the the missing downloader can also fail so I need it to be looped.
+
+It seems that we need something a bit more sofisicated because my file count is 300153/306427. That's really close but that still means there is a bug somewhere. One problem we had when I last ran it was that my log files are seperated. So if the way they were merged doesn't work well, then it's not going to work. I really can't be introducing another file into the pipeline. The downloader just needs to check itself as it goes. Then at the end we can run a small validation script. I actually think I could do it in like 10 lines. So what if...
+- It tries to download an image
+- If it fails it logs it and tries again in a minute
+- It repeates that untill it 
+- If it fails a second time it logs it and generates a {date}missed.csv file
+- If there is a discrephancy between the check and the missed.csv with have a problem
+
+Missing image finder
+- upload csv file
+- extract the expected file structure from the csv file
+- check to make sure that each folder has the correct number of images.
+  - If it doesn't find which ones are missing based off of file name.
+- If there should be multiple batches and there aren't print that as well.
+- Create a csv file formated like missed_pages.csv

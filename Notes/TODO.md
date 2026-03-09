@@ -16,3 +16,6 @@
     - [ ] Loiret
     - [ ] Saint Etienne
 - [ ] Develop a process for handling the edge cases on validating the data
+- [ ] Document Code
+- [ ] Streamline collecting the missing downloads
+    - [ ] get the missing downloader to share code with downloader

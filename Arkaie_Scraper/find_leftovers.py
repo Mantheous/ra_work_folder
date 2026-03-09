@@ -1,23 +1,182 @@
-# this file finds the files that were missed by the downloader.
-# usually because of connection errors
+"""
+find_leftovers.py
+-----------------
+Finds images that were missed by the downloader by comparing what exists on
+disk against the expected file structure derived from the progress CSV.
 
-import pandas as pd
+Usage:
+    python find_leftovers.py <path_to_csv> [output_csv]
+
+CSV format (pipe-delimited, no header):
+    department|page|index|cote|commune|period|record_type|img_count|url
+
+The url column contains the base URL with page 0; all other pages are derived
+by substituting the page index into the URL path segment before "/full".
+
+Output (missed_pages.csv) matches the format used by missed_downloader.py:
+    department|page|index|cote|commune|period|record_type|<page_idx>|<page_url>
+where each row represents a single missing image page.
+"""
+
 import os
+import re
+import sys
+import pandas as pd
 from pathlib import Path
+
+# ─── Configuration ──────────────────────────────────────────────────────────
 _THIS_DIR = Path(__file__).resolve().parent.parent
 from Utilities.paths import PROJECT_ROOT
 
 FRI_FOLDER_PATH = str(PROJECT_ROOT / "Civil_Status" / "Results")
 
-def find_leftovers(mdf, missing_csv):
-    for row in mdf.itertuples():
-        #construct path
-        folder_path = os.path.join(FRI_FOLDER_PATH, dept, r_type, commune, period)
+
+# ─── Helpers ─────────────────────────────────────────────────────────────────
+
+def page_url(base_url: str, page_idx: int) -> str:
+    """
+    Derive the download URL for a specific page index from the base (page=0) URL.
+    The URL contains a segment like /0/full or /272/full – replace that number.
+    """
+    return re.sub(r'/(\d+)/full', f'/{page_idx}/full', base_url)
 
 
+def build_base_filename(dept: str, r_type: str, commune: str) -> str:
+    return f"{dept}_{r_type}_{commune}_"
+
+
+def detect_batches_on_disk(folder_path: str, base_filename: str) -> list[int]:
+    """Return sorted list of batch numbers that have at least page 0 on disk."""
+    if not os.path.isdir(folder_path):
+        return []
+    batches = []
+    batch = 0
+    while os.path.isfile(os.path.join(folder_path, f"{base_filename}{batch}_0.jpg")):
+        batches.append(batch)
+        batch += 1
+    return batches
+
+
+def check_batch(folder_path: str, base_filename: str, batch: int,
+                expected_count: int) -> list[int]:
+    """Return list of missing page indices for a given batch."""
+    missing = []
+    for page in range(expected_count):
+        fp = os.path.join(folder_path, f"{base_filename}{batch}_{page}.jpg")
+        if not os.path.isfile(fp):
+            missing.append(page)
+    return missing
+
+
+# ─── Core ────────────────────────────────────────────────────────────────────
+
+def find_leftovers(df: pd.DataFrame, output_csv: str):
+    """
+    For each row in *df* (which represents one register/volume):
+      1. Compute the expected folder path.
+      2. Determine how many batches should exist (always 1 batch per volume
+         unless a batch_0 file is missing entirely).
+      3. Check each expected page file; collect missing ones.
+      4. Write missing pages to *output_csv* in missed_pages format.
+    """
+
+    missing_rows = []
+    total_missing = 0
+    total_checked = 0
+
+    for row in df.itertuples():
+        dept       = str(row.department)
+        r_type     = str(row.record_type)
+        commune    = str(row.commune)
+        period     = str(row.period)
+        img_count  = int(row.img_count)
+        base_url   = str(row.url)
+
+        folder_path   = os.path.join(FRI_FOLDER_PATH, dept, r_type, commune, period)
+        base_filename = build_base_filename(dept, r_type, commune)
+
+        # ── Batch detection ─────────────────────────────────────────────
+        batches_on_disk = detect_batches_on_disk(folder_path, base_filename)
+
+        # We expect exactly 1 batch (batch 0) per CSV row.
+        # If batch 0 is missing entirely, report it as a full batch problem.
+        if not batches_on_disk:
+            print(
+                f"[MISSING BATCH] {folder_path}\n"
+                f"  → batch 0 completely absent (expected {img_count} images)"
+            )
+            # All pages are missing
+            for page in range(img_count):
+                missing_rows.append([
+                    row.department, row.page, row.index, row.cote,
+                    row.commune, row.period, row.record_type,
+                    page,
+                    page_url(base_url, page),
+                ])
+            total_missing += img_count
+            total_checked += img_count
+            continue
+
+        # If more than 1 batch exists but we only expected 1, flag it
+        if len(batches_on_disk) > 1:
+            print(
+                f"[EXTRA BATCHES] {folder_path}\n"
+                f"  → Found batches {batches_on_disk}, expected only batch 0"
+            )
+
+        # Check each batch that should exist (only batch 0 expected per row)
+        batch = batches_on_disk[0]  # use the first detected batch
+        missing_pages = check_batch(folder_path, base_filename, batch, img_count)
+        total_checked += img_count
+
+        if missing_pages:
+            print(
+                f"[INCOMPLETE] {folder_path} | batch {batch} "
+                f"→ {len(missing_pages)}/{img_count} missing"
+            )
+            for page in missing_pages:
+                missing_rows.append([
+                    row.department, row.page, row.index, row.cote,
+                    row.commune, row.period, row.record_type,
+                    page,
+                    page_url(base_url, page),
+                ])
+            total_missing += len(missing_pages)
+
+    # ── Write output ────────────────────────────────────────────────────
+    if missing_rows:
+        out_df = pd.DataFrame(missing_rows)
+        out_df.to_csv(output_csv, index=False, header=False, sep='|')
+        print(f"\n✓ Wrote {len(missing_rows)} missing-page rows → {output_csv}")
+    else:
+        print("\n✓ No missing pages found. Nothing written.")
+
+    print(f"\nSummary: {total_missing} missing / {total_checked} total pages checked")
+
+
+# ─── Entry point ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    column_headers = ['department','page','index','cote', 'commune', 'period', 'record_type', 'img_count', 'url']
+    if len(sys.argv) < 2:
+        print("Usage: python find_leftovers.py <progress_csv> [output_missed_csv]")
+        sys.exit(1)
+
+    csv_file   = sys.argv[1]
+    output_csv = sys.argv[2] if len(sys.argv) > 2 else "missed_pages.csv"
+
+    if not os.path.exists(csv_file):
+        print(f"Error: CSV file not found: {csv_file}")
+        sys.exit(1)
+
+    column_headers = [
+        'department', 'page', 'index', 'cote',
+        'commune', 'period', 'record_type', 'img_count', 'url'
+    ]
     df = pd.read_csv(csv_file, header=None, delimiter='|', names=column_headers)
-    df = df.map(lambda x: str(x).replace(" ", "_"))
-    find_leftovers(df, "missing_csv.csv")
+
+    # Sanitize spaces → underscores (same as downloader.py)
+    sanitize_cols = ['department', 'record_type', 'commune', 'period']
+    for col in sanitize_cols:
+        df[col] = df[col].astype(str).str.replace(" ", "_", regex=False)
+
+    find_leftovers(df, output_csv)

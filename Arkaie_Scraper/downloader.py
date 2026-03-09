@@ -19,24 +19,34 @@ logging.basicConfig(
 )
 
 async def download_page(session, semaphore, mod_link, download_path, cote):
-    """Handles the actual download of a single image."""
+    """Handles the actual download of a single image, retrying once after 60s on failure."""
     async with semaphore:
-        try:
-            async with session.get(mod_link, timeout=60) as response:
-                if response.status == 200:
-                    content = await response.read()
-                    
-                    # Save binary content (Blocking I/O, but small enough usually)
-                    with open(download_path, 'wb') as f:
-                        f.write(content)
-                    
-                    # Metadata (Running in thread to keep loop moving)
-                    await asyncio.to_thread(insert_metadata, download_path, cote, SHORT_URL)
-                    logging.info(f"Downloaded | {mod_link}")
-                else:
-                    logging.error(f"HTTP {response.status} | {mod_link}")
-        except Exception as e:
-            logging.error(f"Failed | {mod_link} | Error: {str(e)}")
+        for attempt in range(2):  # attempt 0 = first try, attempt 1 = retry
+            try:
+                async with session.get(mod_link, timeout=60) as response:
+                    if response.status == 200:
+                        content = await response.read()
+
+                        # Save binary content (Blocking I/O, but small enough usually)
+                        with open(download_path, 'wb') as f:
+                            f.write(content)
+
+                        # Metadata (Running in thread to keep loop moving)
+                        await asyncio.to_thread(insert_metadata, download_path, cote, SHORT_URL)
+                        logging.info(f"Downloaded | {mod_link} | {download_path}")
+                        print(f"Downloaded | {mod_link} | {download_path}")
+                        return  # Success — no retry needed
+                    else:
+                        logging.error(f"HTTP {response.status} | {mod_link} | {download_path}")
+            except Exception as e:
+                logging.error(f"Failed | {mod_link} | {download_path} | Error: {str(e)}")
+
+            if attempt == 0:
+                print(f"Retrying in 60s | {mod_link} | {download_path}")
+                await asyncio.sleep(60)
+
+        logging.error(f"Giving up after retry | {mod_link} | {download_path}")
+        print(f"Giving up after retry | {mod_link} | {download_path}")
 
 async def run_downloader(file_path):
 

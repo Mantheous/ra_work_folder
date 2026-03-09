@@ -5,7 +5,10 @@ import asyncio
 import aiohttp
 import logging
 
-FRI_FOLDER_PATH = "ra_work_folder/Civil_Status/Results"
+# Anchor to the repo root (3 levels up from this script: Aube2 -> Civil_Status -> ra_work_folder)
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_REPO_ROOT = os.path.abspath(os.path.join(_SCRIPT_DIR, "..", ".."))
+FRI_FOLDER_PATH = os.path.join(_REPO_ROOT, "Civil_Status", "Results")
 SHORT_URL = "https://www.archives-aube.fr/"
 CONCURRENCY_LIMIT = 20
 
@@ -17,24 +20,34 @@ logging.basicConfig(
 )
 
 async def download_page(session, semaphore, mod_link, download_path, cote):
-    """Handles the actual download of a single image."""
+    """Handles the actual download of a single image, retrying once after 60s on failure."""
     async with semaphore:
-        try:
-            async with session.get(mod_link, timeout=60) as response:
-                if response.status == 200:
-                    content = await response.read()
-                    
-                    # Save binary content
-                    with open(download_path, 'wb') as f:
-                        f.write(content)
-                    
-                    # Metadata
-                    await asyncio.to_thread(insert_metadata, download_path, cote, SHORT_URL)
-                    logging.info(f"Downloaded | {mod_link}")
-                else:
-                    logging.error(f"HTTP {response.status} | {mod_link}")
-        except Exception as e:
-            logging.error(f"Failed | {mod_link} | Error: {str(e)}")
+        for attempt in range(2):  # attempt 0 = first try, attempt 1 = retry
+            try:
+                async with session.get(mod_link, timeout=60) as response:
+                    if response.status == 200:
+                        content = await response.read()
+
+                        # Save binary content
+                        with open(download_path, 'wb') as f:
+                            f.write(content)
+
+                        # Metadata
+                        await asyncio.to_thread(insert_metadata, download_path, cote, SHORT_URL)
+                        logging.info(f"Downloaded | {mod_link} | {download_path}")
+                        print(f"Downloaded | {mod_link} | {download_path}")
+                        return  # Success — no retry needed
+                    else:
+                        logging.error(f"HTTP {response.status} | {mod_link} | {download_path}")
+            except Exception as e:
+                logging.error(f"Failed | {mod_link} | {download_path} | Error: {str(e)}")
+
+            if attempt == 0:
+                print(f"Retrying in 60s | {mod_link} | {download_path}")
+                await asyncio.sleep(60)
+
+        logging.error(f"Giving up after retry | {mod_link} | {download_path}")
+        print(f"Giving up after retry | {mod_link} | {download_path}")
 
 async def run_downloader(file_path):
     column_headers = ['department','page','index','cote', 'commune', 'period', 'record_type', 'count', 'url']
@@ -86,8 +99,8 @@ def insert_metadata(image_path, cote, url):
     piexif.insert(exif_bytes, image_path)
 
 if __name__ == "__main__":
-    # Based on the user's provided path
-    csv_path = 'w:/RA_work_folders/Ashton_Reed/ra_work_folder/Civil_Status/Aube2/missed_pages.csv'
+    # Resolve CSV path relative to this script's directory
+    csv_path = os.path.join(_SCRIPT_DIR, 'Aube2_cleaned_missed.csv')
     if os.path.exists(csv_path):
         asyncio.run(run_downloader(csv_path))
     else:
