@@ -8,6 +8,7 @@ import logging
 FRI_FOLDER_PATH = "ra_work_folder/Civil_Status/Results" #"W:\\papers\\curent\\french_records\\french_record_images\\"
 SHORT_URL = "https://www.archives-aube.fr/"
 CONCURRENCY_LIMIT = 20
+TRIES = 5
 
 # Path: W:\papers\curent\french_records\french_record_images\{Department (Name)}\{Record_types}\{Commune}\{Period}\{Department}_{Record_types}_{Commune}_{Batch}_{page}
 
@@ -21,7 +22,7 @@ logging.basicConfig(
 async def download_page(session, semaphore, mod_link, download_path, cote):
     """Handles the actual download of a single image, retrying once after 60s on failure."""
     async with semaphore:
-        for attempt in range(2):  # attempt 0 = first try, attempt 1 = retry
+        for attempt in range(TRIES):  # attempt 0 = first try, attempt 1 = retry
             try:
                 async with session.get(mod_link, timeout=60) as response:
                     if response.status == 200:

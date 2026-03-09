@@ -18,6 +18,7 @@ Output (missed_pages.csv) matches the format used by missed_downloader.py:
 where each row represents a single missing image page.
 """
 
+import asyncio
 import os
 import re
 import sys
@@ -70,78 +71,93 @@ def check_batch(folder_path: str, base_filename: str, batch: int,
 
 # ─── Core ────────────────────────────────────────────────────────────────────
 
-def find_leftovers(df: pd.DataFrame, output_csv: str):
+def _check_row(row_index: int, row) -> tuple[int, list[list]]:
     """
-    For each row in *df* (which represents one register/volume):
+    Synchronous worker that checks one CSV row's folder for missing pages.
+    Returns (row_index, list_of_missing_rows) so results can be re-sorted.
+    """
+    dept      = str(row.department)
+    r_type    = str(row.record_type)
+    commune   = str(row.commune)
+    period    = str(row.period)
+    img_count = int(row.img_count)
+    base_url  = str(row.url)
+
+    folder_path   = os.path.join(FRI_FOLDER_PATH, dept, r_type, commune, period)
+    base_filename = build_base_filename(dept, r_type, commune)
+
+    # ── Batch detection ─────────────────────────────────────────────
+    batches_on_disk = detect_batches_on_disk(folder_path, base_filename)
+
+    missing_rows = []
+
+    if not batches_on_disk:
+        print(
+            f"[MISSING BATCH] {folder_path}\n"
+            f"  → batch 0 completely absent (expected {img_count} images)"
+        )
+        for page in range(img_count):
+            missing_rows.append([
+                row.department, row.page, row.index, row.cote,
+                row.commune, row.period, row.record_type,
+                page,
+                page_url(base_url, page),
+            ])
+        return row_index, missing_rows
+
+    if len(batches_on_disk) > 1:
+        print(
+            f"[EXTRA BATCHES] {folder_path}\n"
+            f"  → Found batches {batches_on_disk}, expected only batch 0"
+        )
+
+    batch = batches_on_disk[0]
+    missing_pages = check_batch(folder_path, base_filename, batch, img_count)
+
+    if missing_pages:
+        print(
+            f"[INCOMPLETE] {folder_path} | batch {batch} "
+            f"→ {len(missing_pages)}/{img_count} missing"
+        )
+        for page in missing_pages:
+            missing_rows.append([
+                row.department, row.page, row.index, row.cote,
+                row.commune, row.period, row.record_type,
+                page,
+                page_url(base_url, page),
+            ])
+
+    return row_index, missing_rows
+
+
+async def find_leftovers(df: pd.DataFrame, output_csv: str):
+    """
+    For each row in *df* (which represents one register/volume), concurrently:
       1. Compute the expected folder path.
-      2. Determine how many batches should exist (always 1 batch per volume
-         unless a batch_0 file is missing entirely).
+      2. Determine how many batches should exist.
       3. Check each expected page file; collect missing ones.
-      4. Write missing pages to *output_csv* in missed_pages format.
+      4. Write all missing pages to *output_csv* in missed_pages format.
+
+    All folder checks run in parallel via asyncio.to_thread (thread-pool),
+    so all folders are examined at the same time rather than sequentially.
     """
+    # Launch every row check concurrently in threads
+    tasks = [
+        asyncio.to_thread(_check_row, i, row)
+        for i, row in enumerate(df.itertuples())
+    ]
+    results = await asyncio.gather(*tasks)
+
+    # Re-sort by original row index to keep output order deterministic
+    results.sort(key=lambda x: x[0])
 
     missing_rows = []
     total_missing = 0
-    total_checked = 0
+    total_checked = int(df['img_count'].sum())
 
-    for row in df.itertuples():
-        dept       = str(row.department)
-        r_type     = str(row.record_type)
-        commune    = str(row.commune)
-        period     = str(row.period)
-        img_count  = int(row.img_count)
-        base_url   = str(row.url)
-
-        folder_path   = os.path.join(FRI_FOLDER_PATH, dept, r_type, commune, period)
-        base_filename = build_base_filename(dept, r_type, commune)
-
-        # ── Batch detection ─────────────────────────────────────────────
-        batches_on_disk = detect_batches_on_disk(folder_path, base_filename)
-
-        # We expect exactly 1 batch (batch 0) per CSV row.
-        # If batch 0 is missing entirely, report it as a full batch problem.
-        if not batches_on_disk:
-            print(
-                f"[MISSING BATCH] {folder_path}\n"
-                f"  → batch 0 completely absent (expected {img_count} images)"
-            )
-            # All pages are missing
-            for page in range(img_count):
-                missing_rows.append([
-                    row.department, row.page, row.index, row.cote,
-                    row.commune, row.period, row.record_type,
-                    page,
-                    page_url(base_url, page),
-                ])
-            total_missing += img_count
-            total_checked += img_count
-            continue
-
-        # If more than 1 batch exists but we only expected 1, flag it
-        if len(batches_on_disk) > 1:
-            print(
-                f"[EXTRA BATCHES] {folder_path}\n"
-                f"  → Found batches {batches_on_disk}, expected only batch 0"
-            )
-
-        # Check each batch that should exist (only batch 0 expected per row)
-        batch = batches_on_disk[0]  # use the first detected batch
-        missing_pages = check_batch(folder_path, base_filename, batch, img_count)
-        total_checked += img_count
-
-        if missing_pages:
-            print(
-                f"[INCOMPLETE] {folder_path} | batch {batch} "
-                f"→ {len(missing_pages)}/{img_count} missing"
-            )
-            for page in missing_pages:
-                missing_rows.append([
-                    row.department, row.page, row.index, row.cote,
-                    row.commune, row.period, row.record_type,
-                    page,
-                    page_url(base_url, page),
-                ])
-            total_missing += len(missing_pages)
+    for _idx, rows in results:
+        missing_rows.extend(rows)
+        total_missing += len(rows)
 
     # ── Write output ────────────────────────────────────────────────────
     if missing_rows:
@@ -179,4 +195,4 @@ if __name__ == "__main__":
     for col in sanitize_cols:
         df[col] = df[col].astype(str).str.replace(" ", "_", regex=False)
 
-    find_leftovers(df, output_csv)
+    asyncio.run(find_leftovers(df, output_csv))
