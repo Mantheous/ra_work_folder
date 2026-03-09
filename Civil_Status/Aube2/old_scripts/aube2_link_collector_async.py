@@ -7,7 +7,9 @@
 
 from playwright.async_api import async_playwright, expect # type: ignore
 import sys
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
+from Utilities.paths import PROJECT_ROOT
 from Utilities.notifier import notify
 import asyncio
 

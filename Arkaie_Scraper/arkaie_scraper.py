@@ -8,8 +8,10 @@
 
 import sys
 import re
+from pathlib import Path
 from playwright.sync_api import TimeoutError
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from Utilities.paths import PROJECT_ROOT
 from Utilities.notifier import notify
 from Utilities.browser_utils import load_browser
 from urllib.parse import urlparse, urlencode, urlunparse, parse_qsl
@@ -70,7 +72,7 @@ class ArkaieScraper:
         else:
             self.filter_link = filter_link
         if csv_location is None:
-            self.csv_location = f"W:/RA_work_folders/Ashton_Reed/ra_work_folder/Civil_Status/{name}/{name}.csv"
+            self.csv_location = str(PROJECT_ROOT / "Civil_Status" / name / f"{name}.csv")
         else:
             self.csv_location = csv_location
 

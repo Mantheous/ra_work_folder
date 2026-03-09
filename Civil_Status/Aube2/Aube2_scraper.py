@@ -2,7 +2,9 @@
 # As of Febuary 2026
 
 import sys
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from Utilities.paths import PROJECT_ROOT
 from Arkaie_Scraper.arkaie_scraper import ArkaieScraper, CollumnNumbers, DebugConfig
 
 class Aube2Scraper(ArkaieScraper):

@@ -2,8 +2,12 @@
 # usually because of connection errors
 
 import pandas as pd
+import os
+from pathlib import Path
+_THIS_DIR = Path(__file__).resolve().parent.parent
+from Utilities.paths import PROJECT_ROOT
 
-FRI_FOLDER_PATH = "W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder\\Civil_Status\\Results\\"
+FRI_FOLDER_PATH = str(PROJECT_ROOT / "Civil_Status" / "Results")
 
 def find_leftovers(mdf, missing_csv):
     for row in mdf.itertuples():

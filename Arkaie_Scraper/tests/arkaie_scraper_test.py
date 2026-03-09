@@ -3,7 +3,9 @@ from unittest import result
 import pytest
 import os
 import pandas as pd
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from Utilities.paths import PROJECT_ROOT
 from Arkaie_Scraper.arkaie_scraper import ArkaieScraper, DebugConfig
 from Civil_Status.Aube2.Aube2_scraper import Aube2Scraper
 from Civil_Status.Cher.cher_scraper import CherScraper

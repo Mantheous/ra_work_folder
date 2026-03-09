@@ -4,8 +4,9 @@
 import re
 import sys
 import pandas as pd
-
-sys.path.append("W:\\RA_work_folders\\Ashton_Reed\\ra_work_folder")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from Utilities.paths import PROJECT_ROOT
 from Arkaie_Scraper.retrieve_communes import retrieve_communes
 from Arkaie_Scraper.arkaie_scraper import ArkaieScraper, CollumnNumbers, DebugConfig
 from Utilities.browser_utils import load_browser
@@ -35,9 +36,9 @@ class CherScraper(ArkaieScraper):
 
     def run_filtered(self):
         try:
-            communes = pd.read_csv("W:/RA_work_folders/Ashton_Reed/ra_work_folder/Civil_Status/Cher/cher_communes.csv")
+            communes = pd.read_csv(PROJECT_ROOT / "Civil_Status" / "Cher" / "cher_communes.csv")
         except:
-            communes = retrieve_communes(self.root_link, "W:/RA_work_folders/Ashton_Reed/ra_work_folder/Civil_Status/Cher/cher_communes.csv")
+            communes = retrieve_communes(self.root_link, str(PROJECT_ROOT / "Civil_Status" / "Cher" / "cher_communes.csv"))
 
         for commune in communes['communs'].tolist():
             self.filter_link = self.get_filter_url(commune)
