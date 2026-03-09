@@ -64,22 +64,15 @@ async def run_downloader(file_path):
             r_type = str(row.record_type).replace(" ", "_")
             commune = str(row.commune).replace(" ", "_")
             period = str(row.period).replace(" ", "_")
+            cote = str(row.cote).replace(" ", "_")
+            page_idx = row.count
 
-            # Folder path logic
+            # Folder path stays the same
             folder_path = os.path.join(FRI_FOLDER_PATH, dept, r_type, commune, period)
             os.makedirs(folder_path, exist_ok=True)
 
-            batch = 0
-            base_filename = f"{dept}_{r_type}_{commune}_"
-            page_idx = row.count
-
-            # Determine batch number. use page_idx to find the batch
-            while os.path.isfile(os.path.join(folder_path, f"{base_filename}{batch}_{page_idx}.jpg")):
-                batch += 1
-
-            # Use column 8 (row.count) for the filename page index
             mod_link = row.url
-            download_path = os.path.join(folder_path, f"{base_filename}{batch}_{page_idx}.jpg")
+            download_path = os.path.join(folder_path, f"{cote}_{page_idx}.jpg")
 
             tasks.append(download_page(session, semaphore, mod_link, download_path, row.cote))
 
@@ -100,7 +93,7 @@ def insert_metadata(image_path, cote, url):
 
 if __name__ == "__main__":
     # Resolve CSV path relative to this script's directory
-    csv_path = os.path.join(_SCRIPT_DIR, 'Aube2_cleaned_missed.csv')
+    csv_path = os.path.join(_SCRIPT_DIR, 'missed_pages.csv')
     if os.path.exists(csv_path):
         asyncio.run(run_downloader(csv_path))
     else:

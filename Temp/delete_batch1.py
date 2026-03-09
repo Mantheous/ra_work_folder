@@ -7,8 +7,8 @@ _REPO_ROOT   = os.path.abspath(os.path.join(_SCRIPT_DIR, ".."))
 RESULTS_ROOT = os.path.join(_REPO_ROOT, "Civil_Status", "Results")
 
 # Filename pattern: {dept}_{r_type}_{commune}_{batch}_{page_idx}.jpg
-# We want to match files where the batch segment == 1
-BATCH1_RE = re.compile(r'^.+_1_\d+\.jpg$')
+# We want to match files where the batch segment is NOT 0
+BATCH1_RE = re.compile(r'^.+_(?!0_)\d+_\d+\.jpg$')
 
 def main():
     deleted = []

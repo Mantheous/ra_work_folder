@@ -60,26 +60,21 @@ async def run_downloader(file_path):
         tasks = []
         for row in df.itertuples():
             # Sanitize each component to remove spaces
-            # TODO Remove this after Aube2 is scraped. I fixed it upstream
             dept = str(row.department).replace(" ", "_")
             r_type = str(row.record_type).replace(" ", "_")
             commune = str(row.commune).replace(" ", "_")
             period = str(row.period).replace(" ", "_")
+            cote = str(row.cote).replace(" ", "_")
 
-            # check to see if there is already a file with the same path
+            # Folder path stays the same
             folder_path = os.path.join(FRI_FOLDER_PATH, dept, r_type, commune, period)
             os.makedirs(folder_path, exist_ok=True)
 
-            batch = 0 
-            base_filename = f"{dept}_{r_type}_{commune}_"
-            
-            # Determine batch number
-            while os.path.isfile(os.path.join(folder_path, f"{base_filename}{batch}_0.jpg")):
-                batch += 1
-
             for page in range(row.count):
+                download_path = os.path.join(folder_path, f"{cote}_{page}.jpg")
+                if os.path.isfile(download_path):
+                    continue  # already downloaded, skip
                 mod_link = row.url.replace("/0/full", f"/{page}/full")
-                download_path = os.path.join(folder_path, f"{base_filename}{batch}_{page}.jpg")
                 tasks.append(download_page(session, semaphore, mod_link, download_path, row.cote))
 
         await asyncio.gather(*tasks)

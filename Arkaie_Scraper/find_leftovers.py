@@ -42,33 +42,6 @@ def page_url(base_url: str, page_idx: int) -> str:
     return re.sub(r'/(\d+)/full', f'/{page_idx}/full', base_url)
 
 
-def build_base_filename(dept: str, r_type: str, commune: str) -> str:
-    return f"{dept}_{r_type}_{commune}_"
-
-
-def detect_batches_on_disk(folder_path: str, base_filename: str) -> list[int]:
-    """Return sorted list of batch numbers that have at least page 0 on disk."""
-    if not os.path.isdir(folder_path):
-        return []
-    batches = []
-    batch = 0
-    while os.path.isfile(os.path.join(folder_path, f"{base_filename}{batch}_0.jpg")):
-        batches.append(batch)
-        batch += 1
-    return batches
-
-
-def check_batch(folder_path: str, base_filename: str, batch: int,
-                expected_count: int) -> list[int]:
-    """Return list of missing page indices for a given batch."""
-    missing = []
-    for page in range(expected_count):
-        fp = os.path.join(folder_path, f"{base_filename}{batch}_{page}.jpg")
-        if not os.path.isfile(fp):
-            missing.append(page)
-    return missing
-
-
 # ─── Core ────────────────────────────────────────────────────────────────────
 
 def _check_row(row_index: int, row) -> tuple[int, list[list]]:
@@ -80,21 +53,18 @@ def _check_row(row_index: int, row) -> tuple[int, list[list]]:
     r_type    = str(row.record_type)
     commune   = str(row.commune)
     period    = str(row.period)
+    cote      = str(row.cote)
     img_count = int(row.img_count)
     base_url  = str(row.url)
 
-    folder_path   = os.path.join(FRI_FOLDER_PATH, dept, r_type, commune, period)
-    base_filename = build_base_filename(dept, r_type, commune)
-
-    # ── Batch detection ─────────────────────────────────────────────
-    batches_on_disk = detect_batches_on_disk(folder_path, base_filename)
+    folder_path = os.path.join(FRI_FOLDER_PATH, dept, r_type, commune, period)
 
     missing_rows = []
 
-    if not batches_on_disk:
+    if not os.path.isdir(folder_path):
         print(
-            f"[MISSING BATCH] {folder_path}\n"
-            f"  → batch 0 completely absent (expected {img_count} images)"
+            f"[MISSING] {folder_path}\n"
+            f"  → folder absent (expected {img_count} images)"
         )
         for page in range(img_count):
             missing_rows.append([
@@ -105,18 +75,16 @@ def _check_row(row_index: int, row) -> tuple[int, list[list]]:
             ])
         return row_index, missing_rows
 
-    if len(batches_on_disk) > 1:
-        print(
-            f"[EXTRA BATCHES] {folder_path}\n"
-            f"  → Found batches {batches_on_disk}, expected only batch 0"
-        )
-
-    batch = batches_on_disk[0]
-    missing_pages = check_batch(folder_path, base_filename, batch, img_count)
+    # Check each expected page using cote-based filename
+    missing_pages = []
+    for page in range(img_count):
+        fp = os.path.join(folder_path, f"{cote}_{page}.jpg")
+        if not os.path.isfile(fp):
+            missing_pages.append(page)
 
     if missing_pages:
         print(
-            f"[INCOMPLETE] {folder_path} | batch {batch} "
+            f"[INCOMPLETE] {folder_path} | {cote} "
             f"→ {len(missing_pages)}/{img_count} missing"
         )
         for page in missing_pages:
@@ -174,8 +142,8 @@ async def find_leftovers(df: pd.DataFrame, output_csv: str):
 
 if __name__ == "__main__":
 
-    csv_file   = "ra_work_folder\Civil_Status\Aube2\Aube2_cleaned.csv"
-    output_csv = sys.argv[2] if len(sys.argv) > 2 else "ra_work_folder\Civil_Status\Aube2\missed_pages.csv"
+    csv_file   = str(PROJECT_ROOT / "Civil_Status" / "Aube2" / "Aube2_cleaned.csv")
+    output_csv = sys.argv[2] if len(sys.argv) > 2 else str(PROJECT_ROOT / "Civil_Status" / "Aube2" / "missed_pages.csv")
 
     if not os.path.exists(csv_file):
         print(f"Error: CSV file not found: {csv_file}")
