@@ -173,12 +173,9 @@ async def find_leftovers(df: pd.DataFrame, output_csv: str):
 # ─── Entry point ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python find_leftovers.py <progress_csv> [output_missed_csv]")
-        sys.exit(1)
 
-    csv_file   = sys.argv[1]
-    output_csv = sys.argv[2] if len(sys.argv) > 2 else "missed_pages.csv"
+    csv_file   = "ra_work_folder\Civil_Status\Aube2\Aube2_cleaned.csv"
+    output_csv = sys.argv[2] if len(sys.argv) > 2 else "ra_work_folder\Civil_Status\Aube2\missed_pages.csv"
 
     if not os.path.exists(csv_file):
         print(f"Error: CSV file not found: {csv_file}")

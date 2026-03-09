@@ -196,6 +196,8 @@ I made a bunch of files today that I don't actually want to keep. I tried to mak
 
 ## 03-09-2026
 
+This is for counting the number of images that have been downloaded. It will exicute like 20 times faster than using properties.
+(Get-ChildItem -Path "W:\RA_work_folders\Ashton_Reed\Ra_work_folder\Civil_status\Results" -Recurse -File -Force -ErrorAction SilentlyContinue).Count
 ### The mud
 
 I spent a lot of time doing something I had already done on friday. Once I realized that I already had the csv file I wanted I then spent a sec to find that the missing downloader was working perfectly as well. I have ran it and well, it seems great. The only problem is that the the missing downloader can also fail so I need it to be looped.
