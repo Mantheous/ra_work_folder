@@ -2,7 +2,6 @@
 - [ ] Follow up on Aube1
 - [ ] Find new approach to  scraping 20000+ record sites
     - [x] One option is to do it by commune and then just dedupe. This make validation very difficult though.
-- [ ] Revise the [downloader.py](Utilities/downloader.py)
 - [ ] Create an async scraper
 - [ ] Reimplement other scrapers
     - [x] Cher
@@ -19,3 +18,5 @@
 - [ ] Document Code
 - [ ] Streamline collecting the missing downloads
     - [ ] get the missing downloader to share code with downloader
+- [ ] figure out what the heck jules is doing
+- [ ] review the async scraper

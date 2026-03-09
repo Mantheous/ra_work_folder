@@ -222,3 +222,6 @@ I think I finnaly found a way to have a good coding model. With antigravity I ca
 
 ### New clean up stratagy
 The biggest problem is how we are storing our data. The current error is the file name is not unique enough. You can have two seperate records that cover the same type of event in the same time period. From the file name and path there should be enough information to identify it. In order to figure out what batch it should be you have to resimulate it's creation, but it's batch is dependent on what is already in the folder. This is not good. Where I am still missing 6000+ images I need to be able to validate that the downloads are correct. 
+
+### The W Drive
+I figured out why the W drive was so slow. I just deleted all of all of the results and now it can't do a thing. It kind of makes sense though. It is like a terabyte and a half.
