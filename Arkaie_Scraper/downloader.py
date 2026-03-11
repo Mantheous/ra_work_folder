@@ -5,7 +5,7 @@ import asyncio
 import aiohttp
 import logging
 
-FRI_FOLDER_PATH = "ra_work_folder/Civil_Status/Results" #"W:\\papers\\curent\\french_records\\french_record_images\\"
+FRI_FOLDER_PATH = "W:\\papers\\current\\french_records\\french_record_images\\"
 SHORT_URL = "https://www.archives-aube.fr/"
 CONCURRENCY_LIMIT = 20
 TRIES = 5
@@ -15,7 +15,7 @@ TRIES = 5
 # Setup Logging for Failed Downloads
 logging.basicConfig(
     filename='failed_downloads.log',
-    level=logging.ERROR,
+    level=logging.INFO,
     format='%(asctime)s - %(message)s'
 )
 
@@ -42,9 +42,8 @@ async def download_page(session, semaphore, mod_link, download_path, cote):
             except Exception as e:
                 logging.error(f"Failed | {mod_link} | {download_path} | Error: {str(e)}")
 
-            if attempt == 0:
-                print(f"Retrying in 60s | {mod_link} | {download_path}")
-                await asyncio.sleep(60)
+            print(f"Retrying in 60s | {mod_link} | {download_path}")
+            await asyncio.sleep(60)
 
         logging.error(f"Giving up after retry | {mod_link} | {download_path}")
         print(f"Giving up after retry | {mod_link} | {download_path}")
@@ -73,6 +72,8 @@ async def run_downloader(file_path):
             for page in range(row.count):
                 download_path = os.path.join(folder_path, f"{cote}_{page}.jpg")
                 if os.path.isfile(download_path):
+                    logging.info(f"Already downloaded | {row.url} | {download_path}")
+                    print(f"Already downloaded | {row.url} | {download_path}")
                     continue  # already downloaded, skip
                 mod_link = row.url.replace("/0/full", f"/{page}/full")
                 tasks.append(download_page(session, semaphore, mod_link, download_path, row.cote))
@@ -103,5 +104,5 @@ def insert_metadata(image_path, cote, url):
     piexif.insert(exif_bytes, image_path)
 
 if __name__ == "__main__":
-    csv_path ='ra_work_folder/Civil_Status/Aube2/Aube2_progress.csv'
+    csv_path ='Civil_Status/Aube2/Aube2_cleaned.csv'
     asyncio.run(run_downloader(csv_path))

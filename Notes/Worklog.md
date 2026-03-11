@@ -221,7 +221,19 @@ Missing image finder
 I think I finnaly found a way to have a good coding model. With antigravity I can have anthropic models which honestly are way better than gemini. It is so game changing to have stuff just work. I often found myself putting in more work to do the process with gemini than I would manually.
 
 ### New clean up stratagy
+The biggest problem is how we are storing our data. The current error is the file name is not unique enough. You can have two seperate records that cover the same type of event in the same time period. From the file name and path there should be enough information to identify it. In order to figure out what batch it should be you have to resimulate it's creation, but it's batch is dependent on what is already in the folder. This is not good. Where I am still missing 6000+ images I need to be able to validate that the downloads are correct.
+
+### 1611 - 1620
+I found a baptisimal book that shows up in every commune as far as I can tell. What is worse is it has multiple links that you can use to download it. It's in the system multiple times. It's probably actually okay as long as it isn't training data.
 The biggest problem is how we are storing our data. The current error is the file name is not unique enough. You can have two seperate records that cover the same type of event in the same time period. From the file name and path there should be enough information to identify it. In order to figure out what batch it should be you have to resimulate it's creation, but it's batch is dependent on what is already in the folder. This is not good. Where I am still missing 6000+ images I need to be able to validate that the downloads are correct. 
 
 ### The W Drive
 I figured out why the W drive was so slow. I just deleted all of all of the results and now it can't do a thing. It kind of makes sense though. It is like a terabyte and a half.
+
+## 03-11-2026
+
+### The Database Proposal
+I have thought that we needed to use an sql server for a while now. I now know why we can't do it. While it might be the most efficient, someone needs to know how to use it. If I was going to stay in this lab forever and always manage the data, then that would be great. But I'm not going to be here and Dr. Price count on always having an RA that does know how to use it. Given the number of research assistants that have worked here and none of them have considered setting it up that way. There just aren't any serious data scientists. So we are just going to use a file system. He liked the idea of a look up table so that you could apply some filters. I don't know if that is worth the work though unless we are using someone elses code.
+
+### Jules
+Jules hasn't actually written much code for me yet, but it's nice because she recognizes all of the files that are out of date so I can easily see what I just need to get rid of.
