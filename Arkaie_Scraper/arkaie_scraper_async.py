@@ -333,6 +333,8 @@ class ArkaieScraperAsync:
         new_url = re.sub(r"(--resultSize=)[^&]*", "--resultSize=" + str(self.results_per_page), new_url)
         return new_url
 
+    _CSV_HEADER = "department|page|index|cote|commune|period|act_types|image_count|href"
+
     def _write_row(self, page_number, i, cote, commune, period, act_types, image_count, href):
         row_data = (
             f"{self.department}|{page_number}|{i + 1}|{cote}"
@@ -342,7 +344,11 @@ class ArkaieScraperAsync:
             f"|{image_count}|{href}"
         )
         with self._csv_lock:
+            path = Path(self.csv_location)
+            needs_header = not path.exists() or path.stat().st_size == 0
             with open(self.csv_location, "a", encoding="utf-8") as f:
+                if needs_header:
+                    f.write(self._CSV_HEADER + "\n")
                 f.write(row_data + "\n")
 
 

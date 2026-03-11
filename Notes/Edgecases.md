@@ -7,3 +7,6 @@ This is where I am trying to keep track of all of the weird behavior that I have
 - Records that can not be viewed
     - Resolution: Document somehow that the record was skipped.
 - Missing results: Sometimes the website will just straight up not show a line of the table. It's just not there. Instead of there being 25 rows there are 24. Or 99 instead of 100. As far as I know there is no way to get these records. It is possible that they could be accessed via api. This would basically require figuring out their bug though. Kinda hard when you can't see the source code. Claude thought that the missing value was something, it gave me an api request and everything, but that record was already contained somewhere else in my scrape. So if that truely is the case then their website is just advertising that it has more records than it really has. I think I am just going to ignore them.
+- Record_type missing
+    - Resolution: Add them to their own folder
+- Small quantities of NaN: There was an instance that was missing it's commune. It's better to just find it manually. Or have claude go figure it out.That would be kind of hard to throw in right now but it could work.

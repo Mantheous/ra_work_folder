@@ -230,6 +230,12 @@ The biggest problem is how we are storing our data. The current error is the fil
 ### The W Drive
 I figured out why the W drive was so slow. I just deleted all of all of the results and now it can't do a thing. It kind of makes sense though. It is like a terabyte and a half.
 
+### Discoveries
+This is for counting the number of images that have been downloaded. It will exicute like 20 times faster than using properties.
+(Get-ChildItem -Path "W:\RA_work_folders\Ashton_Reed\Ra_work_folder\Civil_status\Results" -Recurse -File -Force -ErrorAction SilentlyContinue).Count
+
+The record for 1611-1620 for baptism in is shows up in Hotel-dieu is the same for all of them.
+
 ## 03-11-2026
 
 ### The Database Proposal
@@ -237,7 +243,11 @@ I have thought that we needed to use an sql server for a while now. I now know w
 
 ### AI Tools
 Jules hasn't actually written much code for me yet, but it's nice because she recognizes all of the files that are out of date so I can easily see what I just need to get rid of.
-With Anti gravity you can have claude or gemini open up a browser tab and interact with it. I really should be able to give it a base url and tell it find the modifications that need to be made so that the 
+With Anti gravity you can have claude or gemini open up a browser tab and interact with it. I really should be able to give it a base url and tell it find the modifications that need to be made so that the scraper works. This is lowkey game changing. Basically the Agentic framework that I want to make already exists I just need to figure out a way to package it so that it is useful for a non coder. Or maybe it's okay to just have it be a tool for me. 
 
 ### Creuse
 So I am pretty sure that the csv scrape for Creuse is as good as we can get. It is missing 5 records and the rows that are missing just aren't on the website. They are all index 100 and when you go to these pages they just aren't on the website. Well, it is suspicous that they are all the last index. I am going to try finding the missing records with a result size of 25. 
+We started the downloader.
+
+### Validation
+There are still some cinks in the validation process. It shouldn't be so manual. Well, I guess that's the point of the pipeline. Basically I manually found the commune for one of the records.
