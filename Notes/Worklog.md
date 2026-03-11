@@ -235,5 +235,9 @@ I figured out why the W drive was so slow. I just deleted all of all of the resu
 ### The Database Proposal
 I have thought that we needed to use an sql server for a while now. I now know why we can't do it. While it might be the most efficient, someone needs to know how to use it. If I was going to stay in this lab forever and always manage the data, then that would be great. But I'm not going to be here and Dr. Price count on always having an RA that does know how to use it. Given the number of research assistants that have worked here and none of them have considered setting it up that way. There just aren't any serious data scientists. So we are just going to use a file system. He liked the idea of a look up table so that you could apply some filters. I don't know if that is worth the work though unless we are using someone elses code.
 
-### Jules
+### AI Tools
 Jules hasn't actually written much code for me yet, but it's nice because she recognizes all of the files that are out of date so I can easily see what I just need to get rid of.
+With Anti gravity you can have claude or gemini open up a browser tab and interact with it. I really should be able to give it a base url and tell it find the modifications that need to be made so that the 
+
+### Creuse
+So I am pretty sure that the csv scrape for Creuse is as good as we can get. It is missing 5 records and the rows that are missing just aren't on the website. They are all index 100 and when you go to these pages they just aren't on the website. Well, it is suspicous that they are all the last index. I am going to try finding the missing records with a result size of 25. 
