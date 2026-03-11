@@ -5,6 +5,7 @@ from ra_work_folder.Utilities.validate_csv import validate
 import pandas as pd
 
 class Scrapers(Enum):
+    """Enumeration of available department scrapers."""
     Aube = None
     Aube2 = Aube2Scraper(
         debug_config=DebugConfig(headless=True,),
@@ -14,6 +15,7 @@ class Scrapers(Enum):
 
 
 def main(starting_phase: int, scraper: Scrapers):
+    """Main pipeline runner for a specified department scraper."""
     if scraper.value is None:
         print("Scraper not implemented yet.")
         return
