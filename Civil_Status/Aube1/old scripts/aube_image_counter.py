@@ -1,3 +1,5 @@
+# OLD AND UNUSED CODE
+
 # Scraper for "https://www.archives-aube.fr/recherches/documents-numerises/genealogie/tout-letat-civil/etat-civil-des-communes-de-laube-hors-troyes-1552-1919?arko_default_6228a5627b9b1--ficheFocus="
 # As of Febuary 2026
 

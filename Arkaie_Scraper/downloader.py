@@ -39,7 +39,7 @@ async def download_page(session, semaphore, mod_link, download_path, cote):
             logging.error(f"Failed | {mod_link} | Error: {str(e)}")
 
 async def run_downloader(file_path):
-
+    """Parses a CSV to extract records and asynchronously download their constituent images."""
     column_headers = ['department','page','index','cote', 'commune', 'period', 'record_type', 'count', 'url']
     df = pd.read_csv(file_path, header=None, delimiter='|', names=column_headers)
     

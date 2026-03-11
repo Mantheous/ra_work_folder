@@ -1,3 +1,5 @@
+# OLD AND UNUSED CODE
+
 # Scraper for "https://www.archives-aube.fr/recherches/documents-numerises/genealogie/tout-letat-civil/etat-civil-de-la-ville-de-troyes-1535-1919?arko_default_62289d8b205f4--ficheFocus="
 # As of Febuary 2026
 

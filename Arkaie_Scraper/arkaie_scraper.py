@@ -17,7 +17,9 @@ from urllib.parse import urlparse, urlencode, urlunparse, parse_qsl
 DEFAULT_URL = "https://archives.creuse.fr"
 
 class CollumnNumbers:
+    """Configuration class that maps data columns to their zero-indexed positions in the parsed table."""
     def __init__(self, cote: int = 0, commune: int = 1, act_types: int = 2, period: int = 3, image_count: int = 4):
+        """Initializes the column numbers for parsing."""
         self.cote = cote
         self.commune = commune
         self.act_types = act_types
@@ -32,6 +34,7 @@ class DebugConfig:
     despite those error, but when you are testing, you want to know about those errors so you can fix them.
     """
     def __init__(self, headless: bool, one_per_page: bool = False, raise_exceptions: bool = False, stoping_page: int = None, notify_crash: bool = True): # pyright: ignore[reportArgumentType]
+        """Initializes the debugging configuration state."""
         self.headless = headless
         self.one_per_page = one_per_page
         self.raise_exceptions = raise_exceptions
@@ -40,9 +43,7 @@ class DebugConfig:
 
 # TODO: add stopping point. For testing
 class ArkaieScraper:
-    """
-    
-    """
+    """Base scraper class for Arkaïe-based sites that contains the main execution loop, URL mutation, and DOM parsing capabilities."""
     def __init__(
             self, 
             root_link: str = DEFAULT_URL,
@@ -91,6 +92,7 @@ class ArkaieScraper:
         self.number_of_records = None
     
     def run_main(self):
+        """Starts the main scraping loop, iterating through all available pages."""
         self.page_number = self.starting_page
 
         with load_browser(headless=self.debug_config.headless) as page:
@@ -117,6 +119,7 @@ class ArkaieScraper:
     
     # I don't like that it use regex, but urlparse broke the query string
     def url_for_page_number_filtered(self, page_number) -> str:
+        """Constructs the URL for a specific page using the filtered query parameters."""
         # 1. Identify the dynamic Arko ID prefix from the URL
         # This matches 'arko_default_' followed by alphanumeric characters
         arko_match = re.search(r'arko_default_[a-z0-9]+', self.filter_link)
@@ -138,6 +141,7 @@ class ArkaieScraper:
         return new_url
     
     def url_for_page_number(self, page_number) -> str:
+        """Constructs the URL for a specific page using the base URL without filters."""
         # 1. Extract the hex ID (the 'funny string')
         # This regex looks for 'arko_default_' followed by alphanumeric characters
         match = re.search(r'arko_default_([a-z0-9]+)', self.root_link)
@@ -167,6 +171,7 @@ class ArkaieScraper:
 
 
     def jump_to_page(self, target_page: int):
+        """Navigates the browser to the specified target page index."""
         if self.root_link == self.filter_link:
             self.page.goto(self.url_for_page_number(target_page))
         else:
@@ -175,6 +180,7 @@ class ArkaieScraper:
 
 
     def scrape_page(self, page_number: int, starting_row: int = 0):
+        """Extracts rows from the current page and processes them sequentially."""
         print(f"Page {page_number}:")
         row_count = self.count_rows()
         if self.debug_config.one_per_page:
@@ -187,6 +193,7 @@ class ArkaieScraper:
                 self.process_row(i)
 
     def process_row(self, i: int):
+        """Parses a specific row from the table and extracts its viewer link."""
         try:
             table_body = self.page.locator('tbody')
             row = table_body.locator('tr').nth(i)
@@ -213,6 +220,7 @@ class ArkaieScraper:
         
 
     def enter_viewer(self, row) -> str:
+        """Enters the viewer for a specific row to extract the download link."""
         self.navigate_to_download_link(row)
         href = self.page.locator('a.exporter').get_attribute("href")
         # go back to the results page
@@ -221,11 +229,13 @@ class ArkaieScraper:
         return str(href)
 
     def click_terms(self):
+        """Accepts the terms and conditions popup if it appears."""
         # accept terms and conditions.
         self.page.locator("button[data-cy='accept-license']").click()
         self.page.wait_for_load_state('networkidle')
 
     def navigate_to_download_link(self, row):
+        """Navigates the DOM inside the viewer to locate the export/download button."""
         # click on the eyeball button
         row.locator("td").nth(self.collumn_numbers.image_count).locator("button").click()
         self.page.wait_for_load_state('networkidle')
@@ -243,6 +253,7 @@ class ArkaieScraper:
         self.page.locator('button[title="Partage et impression"]').click()
 
     def count_rows(self) -> int:
+        """Counts the number of records visible on the current page table."""
         self.wait_for_load()
         table_body = self.page.locator('tbody')
         row_count = table_body.locator("tr").count()
@@ -250,6 +261,7 @@ class ArkaieScraper:
     
     
     def wait_for_load(self):
+        """Waits for the loading ring element to disappear."""
         try:
             # Wait for the loader to appear (briefly)
             self.page.wait_for_selector(".loading-ring", state="visible", timeout=2000)
@@ -259,26 +271,29 @@ class ArkaieScraper:
             pass
 
     def write_row(self, i, cote, commune, period, act_types, image_count, href):
+        """Appends a new record line to the current CSV file."""
         # CSV format: department | page_number | row_number | cote | commune | period | act_types | image_count | href
         row_data = f"{self.department}|{self.page_number}|{i+1}|{cote}|{commune.strip().replace(" ", "_")}|{period.replace(" ", "_")}|{act_types.replace('\n', ', ').replace(" ", "_")}|{image_count}|{href}"
         with open(self.csv_location, "a", encoding="utf-8") as f:
             f.write(row_data + "\n")
         
     def recover_row_fail(self, i, e):
+        """Logs the error, handles retries, and refreshes the page on single row failures."""
         # Attempt to recover from timeout error
-            if self.debug_config.raise_exceptions:
-                raise e
-            
-            print(f"Timeout processing row {i} Try {self.tries} Error: {e}")
-            self.tries += 1
-            if self.tries > self.max_tries:
-                notify(message=f"{self.name} scraper failed to process row after max tries", subject=f"{self.name} Scraper Error")
-                print("exiting...")
-                exit()
-            self.jump_to_page(self.page_number)
-            self.process_row(i)
+        if self.debug_config.raise_exceptions:
+            raise e
+
+        print(f"Timeout processing row {i} Try {self.tries} Error: {e}")
+        self.tries += 1
+        if self.tries > self.max_tries:
+            notify(message=f"{self.name} scraper failed to process row after max tries", subject=f"{self.name} Scraper Error")
+            print("exiting...")
+            exit()
+        self.jump_to_page(self.page_number)
+        self.process_row(i)
     
     def recover_page_fail(self, e):
+        """Logs the error, handles retries, and refreshes the browser on page load failures."""
         if self.debug_config.raise_exceptions:
             raise e
         print(f"Page error: '{str(e)}' on page {self.page_number}. Retrying...")

@@ -1,3 +1,5 @@
+# OLD AND UNUSED CODE
+
 # this generates the list of all the communes that have records
 
 from playwright.sync_api import sync_playwright, expect # type: ignore

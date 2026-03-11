@@ -16,6 +16,7 @@ def navigate_to_commune_list(page):
         page.get_by_label('Consulter la liste').first.click()
 
 def retrieve_communes(link: str, out_file = None) -> pd.DataFrame:
+    """Navigates the site and builds a CSV dictionary of all communes."""
     df = pd.DataFrame(columns= ["communs", "record_count"])
     with load_browser(headless=False) as page:
         page.goto(link)

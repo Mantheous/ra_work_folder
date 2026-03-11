@@ -12,6 +12,7 @@ import pandas as pd
 # - Can be traced back to the source
 
 def validate(file_path, number_of_records=None):
+    """Validates a downloaded CSV to ensure correctness and count matches."""
     try:
         # Load file with the pipe delimiter
         column_headers = ['Department','Page','Index','Cote', 'Commune', 'Date_Range', 'Record_Type', 'Count', 'URL']
