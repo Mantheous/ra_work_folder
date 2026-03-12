@@ -251,3 +251,9 @@ We started the downloader.
 
 ### Validation
 There are still some cinks in the validation process. It shouldn't be so manual. Well, I guess that's the point of the pipeline. Basically I manually found the commune for one of the records.
+
+## 03-12-2026
+So I got a new project. It requires extracting data from the national archives. It's the US achives which means... They ought to have their stuff together. And they have an API.
+
+### API
+I requested an API key. I think that is the most ethical route, In the mean time while we wait for them to respond... I should um go to class.

@@ -15,8 +15,5 @@
     - [ ] Loiret
     - [ ] Saint Etienne
 - [ ] Develop a process for handling the edge cases on validating the data
-- [x] figure out what the heck jules is doing
 - [ ] review the async scraper
-- [ ] Create readme for Creuse scrape
-    - / symbols are represented as % in the file names
-    - Which files are missing from the data
+- [ ] Remove the log on download. That is slowing down the scraper by 200%
