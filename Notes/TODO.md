@@ -2,7 +2,7 @@
 - [ ] Follow up on Aube1
 - [ ] Find new approach to  scraping 20000+ record sites
     - [x] One option is to do it by commune and then just dedupe. This make validation very difficult though.
-- [ ] Create an async scraper
+- [x] Create an async scraper
 - [ ] Reimplement other scrapers
     - [x] Cher
     - [x] Creuse
@@ -15,8 +15,5 @@
     - [ ] Loiret
     - [ ] Saint Etienne
 - [ ] Develop a process for handling the edge cases on validating the data
-- [ ] Document Code
-- [ ] Streamline collecting the missing downloads
-    - [ ] get the missing downloader to share code with downloader
-- [ ] figure out what the heck jules is doing
 - [ ] review the async scraper
+- [ ] Remove the log on download. That is slowing down the scraper by 200%

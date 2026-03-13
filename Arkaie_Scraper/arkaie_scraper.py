@@ -260,10 +260,16 @@ class ArkaieScraper:
         except:
             pass
 
+    _CSV_HEADER = "department|page|index|cote|commune|period|act_types|image_count|href"
+
     def write_row(self, i, cote, commune, period, act_types, image_count, href):
         # CSV format: department | page_number | row_number | cote | commune | period | act_types | image_count | href
-        row_data = f"{self.department}|{self.page_number}|{i+1}|{cote}|{commune.strip().replace(" ", "_")}|{period.replace(" ", "_")}|{act_types.replace('\n', ', ').replace(" ", "_")}|{image_count}|{href}"
+        row_data = f"{self.department}|{self.page_number}|{i+1}|{cote}|{commune.strip().replace(' ', '_')}|{period.replace(' ', '_')}|{act_types.replace(chr(10), ', ').replace(' ', '_')}|{image_count}|{href}"
+        path = Path(self.csv_location)
+        needs_header = not path.exists() or path.stat().st_size == 0
         with open(self.csv_location, "a", encoding="utf-8") as f:
+            if needs_header:
+                f.write(self._CSV_HEADER + "\n")
             f.write(row_data + "\n")
         
     def recover_row_fail(self, i, e):

@@ -60,4 +60,4 @@ def validate(file_path, number_of_records=None):
     
 
 if __name__ == "__main__":
-    validate('ra_work_folder/Utilities/validation_test.csv', 12428)
+    validate('Validation/validation_test.csv', 12428)
