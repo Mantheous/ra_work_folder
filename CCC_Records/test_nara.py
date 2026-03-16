@@ -8,7 +8,8 @@ params = {
 }
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    "Accept": "application/json"
+    "Accept": "application/json",
+    "x-api-key": "U4dyklgi89adWiuQ4hbko3D018K35o7G4yMIjKv9"
 }
 
 print("Fetching data from NARA API...")
