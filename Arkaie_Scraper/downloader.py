@@ -8,8 +8,8 @@ import logging
 FRI_FOLDER_PATH = "W:\\papers\\current\\french_records\\french_record_images\\"
 RUN_NAME = "Creuse"
 SHORT_URL = "https://archives.creuse.fr/"
-CSV_PATH ='ra_work_folder/Civil_Status/Creuse/Creuse_cleaned.csv'
-CONCURRENCY_LIMIT = 1
+CSV_PATH ='ra_work_folder/Civil_Status/Creuse/Creuse_progress.csv'
+CONCURRENCY_LIMIT = 50
 TRIES = 50
 CREATE_FOLDERS = False
 
@@ -37,7 +37,7 @@ async def download_page(session, semaphore, mod_link, download_path, cote):
 
                         # Metadata (Running in thread to keep loop moving)
                         await asyncio.to_thread(insert_metadata, download_path, cote, SHORT_URL)
-                        logging.info(f"Downloaded | {mod_link} | {download_path}")
+                        # logging.info(f"Downloaded | {mod_link} | {download_path}")
                         print(f"Downloaded | {mod_link} | {download_path}")
                         return  # Success — no retry needed
                     else:

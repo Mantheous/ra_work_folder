@@ -17,3 +17,11 @@
 - [ ] Develop a process for handling the edge cases on validating the data
 - [ ] review the async scraper
 - [ ] Remove the log on download. That is slowing down the scraper by 200%
+
+## CCC Records
+- [x] Get API key
+- [ ] Small scope Question: Names of men in company 4479.
+    - [ ] extracted text query
+    - [ ] split pages by person
+    - [ ] parse response
+    - [ ] NLP to extract names

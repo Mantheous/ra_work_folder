@@ -257,3 +257,13 @@ So I got a new project. It requires extracting data from the national archives. 
 
 ### API
 I requested an API key. I think that is the most ethical route, In the mean time while we wait for them to respond... I should um go to class.
+
+## 03-13-2026
+
+### API
+I think I am actually going to get a key. That should be super chill. They sent me the docs. [docs](https://catalog.archives.gov/api/v2/api-docs/)
+
+## 03-16-2026
+
+### Aube2
+I got my key, it's U4dyklgi89adWiuQ4hbko3D018K35o7G4yMIjKv9. I messed with it a little bit and I could really figure out what the search results were. It seems like I should be able to search the extracted text of the records. However I searched for some text that I know existed in certain documents and they didn't show up in the results. 
