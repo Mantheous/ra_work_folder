@@ -282,9 +282,40 @@ So I made a pretty good outline. Something works, I really need to dig through t
 I mostly have been planning today:
 [Figma board](https://www.figma.com/board/qjiZMnsky8r9wE12VpTGK5/Untitled?node-id=0-1&t=UlW8zezEZQyrNG29-1)
 
-### Discoveries
+### DOS
 Some one is DOSing the national archives. It's kind of funny because that's kind of what I was going to do. Not like maliciously, but I am sure the other guy has good intentions as well. I can't get the proxy server to give me anything but an empty response. I am not sure what to do about that. I guess just wait for them to either get shut down or finish.
 
+### Silent Failures
 The biggest problem with this is that it causes the proxy server to return empty responses. That means that blank pages and network failures look the same. It's not even a problem that I have to deal with because I am skipping the scraper. If I scrape it, I will just have an empty page as well.
+I know sometimes the failure isn't silent. ![alt text](image-2.png) I don't know if this accounts for the same problem. I was seeing responses like this: 
+```json
+{
+  "naId": "532928289",
+  "page": 1,
+  "limit": 1,
+  "total": 1,
+  "digitalObjects": []
+}
+```
 
-I am trying to verify my findings by getting it to repeat. To verify that the same page will return different results.
+I am trying to verify my findings by getting it to repeat. To verify that the same page will return different results. I was able to verify the problem. I am not sure what to do about it, because blank pages surely exist in the records. It does say that they are working on the issue. That could mean the problem wasn't a DOS attack, or it could mean that they are working on blocking the dude. Que chabon. I now see why DOSing is unpolite.
+
+### Scale
+
+Scoped Query:
+- results: 187
+- pages per results: ~2500
+- pages per person: ~30
+- total pages: 467,500
+- total people: 15,583
+
+Full Search:
+- results: 13,268
+- pages per results: ~2500
+- pages per person: ~30
+- total pages: 33,170,000
+- total people: 1,105,666
+- Google says that there are about 3 million people.
+That means that my estimate for pages per person is likely wrong. Still this is a large scale sort of thing.
+
+I feel like I just ran into this with the civil status records. Dr. Price wants some data and then I go to try and scrape it and I realize it's just a massive ammount of data. Like the kind of thing you should get a professional data engineer for. And I guess I want to have that skill, but I worry that I am not understanding the scope of the project. Makayla would probably just make a little scraper that just goes through the pages one by one and copies from the extracted text field. What is wrong with that though? Well it's slow. If you scrape a page in ten seconds it would take 10 years. If you scrape a page in 1 second, it would take 1 year. If you can do it in a tenth of a second it would still take over a month. I suspect that the speed of a webscraper would be between 1 and 0.1 seconds per page. That's still like super slow. I don't think that they expect me to make a scraper that takes that long.

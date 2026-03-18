@@ -23,6 +23,7 @@
 - [x] Find method to get extracted text
 - [x] Find method to split cases
 - [x] Plan structure for search data
+- [x] Prove the silent failure on network load.
 - [ ] Get a sample of a case
 - [ ] Do a basic NLP extraction on the sample case
 - [ ] Figure out how I want to structure the personal data
