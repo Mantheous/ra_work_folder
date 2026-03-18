@@ -1,6 +1,7 @@
 # Don't include the results of the scrapers in git, as they are large and can be easily regenerated.
 Results/
 pytest-cache*
+apikeys.py
 
 # python virtual environments
 .venv/
@@ -17,6 +18,7 @@ pytest-cache*
 *.userosscache
 *.sln.docstates
 *.env
+
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

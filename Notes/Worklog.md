@@ -265,5 +265,26 @@ I think I am actually going to get a key. That should be super chill. They sent 
 
 ## 03-16-2026
 
-### Aube2
-I got my key, it's U4dyklgi89adWiuQ4hbko3D018K35o7G4yMIjKv9. I messed with it a little bit and I could really figure out what the search results were. It seems like I should be able to search the extracted text of the records. However I searched for some text that I know existed in certain documents and they didn't show up in the results. 
+### API
+I got my key, it's in apikeys.py. I messed with it a little bit and I could really figure out what the search results were. It seems like I should be able to search the extracted text of the records. However I searched for some text that I know existed in certain documents and they didn't show up in the results. I forgot to fix the git ignore and make the api key stored privately. That's unfortunate, I don't think it will come back to bite me.
+
+### Discoveries
+It looks like the api doesn't actually return the extracted text. I can get the images stupidly easy. I did find a way to get the extracted text. It looks like if I send a request to a different location I can get the info I want.
+
+### Concerns
+I worry because I haven't been able to mamually find any data that is relevant. It seems probable that the data I am looking for exists in these records, but it's hard to verify that I am headed in the right dirrection.
+
+### Results
+So I made a pretty good outline. Something works, I really need to dig through the code that was made though so I can understand it well. I know that I want it to use spacy instead of regex. I think the main flaw of the system is that it isn't flexible. I really want it to find all the information that it can and label it all in a way that is really searchable. I mostly did a lot of planning today. I learned a lot about the API and what not.
+
+## 03-18-2026
+
+I mostly have been planning today:
+[Figma board](https://www.figma.com/board/qjiZMnsky8r9wE12VpTGK5/Untitled?node-id=0-1&t=UlW8zezEZQyrNG29-1)
+
+### Discoveries
+Some one is DOSing the national archives. It's kind of funny because that's kind of what I was going to do. Not like maliciously, but I am sure the other guy has good intentions as well. I can't get the proxy server to give me anything but an empty response. I am not sure what to do about that. I guess just wait for them to either get shut down or finish.
+
+The biggest problem with this is that it causes the proxy server to return empty responses. That means that blank pages and network failures look the same. It's not even a problem that I have to deal with because I am skipping the scraper. If I scrape it, I will just have an empty page as well.
+
+I am trying to verify my findings by getting it to repeat. To verify that the same page will return different results.
