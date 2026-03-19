@@ -80,7 +80,9 @@ def main():
             if str(object_id) in fetched_ids:
                 print(f"  [{i}/{len(object_ids)}] Skipping objectId={object_id} (Already fetched)")
                 continue
-                
+            print("Waiting 1 a second...")
+            time.sleep(1)
+
             print(f"  [{i}/{len(object_ids)}] Fetching objectId={object_id}...")
             text = fetch_extracted_text(object_id, session)
 

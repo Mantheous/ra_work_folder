@@ -319,3 +319,11 @@ Full Search:
 That means that my estimate for pages per person is likely wrong. Still this is a large scale sort of thing.
 
 I feel like I just ran into this with the civil status records. Dr. Price wants some data and then I go to try and scrape it and I realize it's just a massive ammount of data. Like the kind of thing you should get a professional data engineer for. And I guess I want to have that skill, but I worry that I am not understanding the scope of the project. Makayla would probably just make a little scraper that just goes through the pages one by one and copies from the extracted text field. What is wrong with that though? Well it's slow. If you scrape a page in ten seconds it would take 10 years. If you scrape a page in 1 second, it would take 1 year. If you can do it in a tenth of a second it would still take over a month. I suspect that the speed of a webscraper would be between 1 and 0.1 seconds per page. That's still like super slow. I don't think that they expect me to make a scraper that takes that long.
+
+## 03-19-2026
+
+### Proxy Server
+Their OCR server is really unstable I guess the symptoms that I am seeing are the same as what I was having yesterday. I got a 503 error and I think it is because someone is over loading the server.
+
+### Meeting Notes
+The meeting was lowkey inspiring today. The main take away is I need to make sure I am always curious in other people. 3 people per meeting
