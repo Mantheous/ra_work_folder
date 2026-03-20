@@ -327,3 +327,20 @@ Their OCR server is really unstable I guess the symptoms that I am seeing are th
 
 ### Meeting Notes
 The meeting was lowkey inspiring today. The main take away is I need to make sure I am always curious in other people. 3 people per meeting
+
+## 03-20-2026
+
+### Proxy Server
+![alt text](image-3.png)
+Here we can see the server returned a 200 code with an empty response
+
+After some thourough investigation I think I have a pretty good understanding of what is going on. [[analysis_results]] contains the models's analysis and it confirms what I thought was happening. The statistic that is scary is that it fails most of the time. I guess the one thing I haven't verified well is whether they always fail or not. No, actually I know that they don't always fail because I was able to get a complete extraction.
+
+So we could just build a scraper that has crazy good error handling. It would have to keep an excelent list of which end points have not worked and keep the data meticulously organized.
+
+### Discoveries
+Crazy discovery! I found out that I can actually request multiple pages with the proxy server. That means I can do things in bulk. I can maybe get a whole record. I got 100 pages of a record just barely. [[proxy_bulk_sample.json]] 
+
+"[Link to page four of results](https://catalog.archives.gov/proxy/extractedText/529913494?page=4&limit=100)"
+
+This is a huge breakthrough. The project full scale of the project seems pretty managable now. Instead of having to process 28,860,598 pages I only have to process 288,606 pages. That's a massive difference. We can take out a whole record in about 25 requests. I think we really do need to load the whole extracted text for a record into memory at a time so we can get all of the splits.

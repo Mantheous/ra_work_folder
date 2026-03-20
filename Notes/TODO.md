@@ -21,11 +21,10 @@
 ## CCC Records
 - [x] Get API key
 - [x] Find method to get extracted text
-- [x] Find method to split cases
 - [x] Plan structure for search data
 - [x] Prove the silent failure on network load.
-- [ ] Get a sample of a case
-- [ ] Do a basic NLP extraction on the sample case
+- [x] Get a sample of a case
+- [x] Do a basic NLP extraction on a sample case
 - [ ] Figure out how I want to structure the personal data
 
 - [ ] Small scope Question: Names of men in company 4479.
@@ -33,3 +32,12 @@
     - [ ] split pages by person
     - [ ] parse response
     - [ ] NLP to extract names
+
+### Pipeline
+ - [ ] Search
+ - [ ] Extract
+    - [ ] Nicely attemp multiple times
+ - [ ] Segment
+    - [x] Find method to split cases
+ - [ ] NLP
+ - [ ] Store
