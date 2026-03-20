@@ -344,3 +344,6 @@ Crazy discovery! I found out that I can actually request multiple pages with the
 "[Link to page four of results](https://catalog.archives.gov/proxy/extractedText/529913494?page=4&limit=100)"
 
 This is a huge breakthrough. The project full scale of the project seems pretty managable now. Instead of having to process 28,860,598 pages I only have to process 288,606 pages. That's a massive difference. We can take out a whole record in about 25 requests. I think we really do need to load the whole extracted text for a record into memory at a time so we can get all of the splits.
+
+### Data
+One thing I noticed was that there are often multiple documents that report weight that have different dates. Now that I have a good sample of data I can start building the JSON structure.
