@@ -34,9 +34,10 @@
     - [ ] NLP to extract names
 
 ### Pipeline
+ - [ ] Database init
  - [ ] Search
  - [ ] Extract
-    - [ ] Nicely attemp multiple times
+    - [ ] Nicely attempt multiple times
  - [ ] Segment
     - [x] Find method to split cases
  - [ ] NLP

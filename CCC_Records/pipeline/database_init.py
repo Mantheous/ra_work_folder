@@ -18,37 +18,20 @@ def get_connection():
     _create_tables(conn)
     return conn
 
-
+# Right now we are just getting the pages table. I know what the cases table needs, but we aren't implementing it yet
 def _create_tables(conn):
     """Create the database schema if it does not already exist."""
     conn.executescript("""
-        CREATE TABLE IF NOT EXISTS pages (
-            object_id   TEXT PRIMARY KEY,
-            na_id       TEXT NOT NULL,
-            status      TEXT NOT NULL DEFAULT 'pending',
-            raw_text    TEXT
-        );
-
-        CREATE TABLE IF NOT EXISTS cases (
-            case_id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            na_id           TEXT NOT NULL,
-
-            -- Meta Data --
+        CREATE TABLE IF NOT EXISTS hits (
+            na_id           TEXT PRIMARY KEY,      
             query           TEXT NOT NULL,
-            url             TEXT NOT NULL, -- "https://catalog.archives.gov/id/{NAID}?objectPage={PAGE}"
-            starting_page   INT NOT NULL, -- NAID - Object ID
-            ending_page     INT NOT NULL, -- starting page - Object ID
             record_group    TEXT NOT NULL,
-            title           TEXT NOT NULL,
-
-            -- Extracted Data --
-            case_text       TEXT,
-            json_data       TEXT,  -- JSON blob
-            FOREIGN KEY (na_id) REFERENCES pages(na_id)
+            record_title    TEXT NOT NULL,
+            object_id_start INT NOT NULL, -- Starting page of the record EI the object id of the first page
+            object_id_end   INT NOT NULL, -- Ending page of the record EI the object id of the last page
+            status          TEXT NOT NULL DEFAULT 'pending',
+            raw_text        TEXT
         );
-
-        CREATE INDEX IF NOT EXISTS idx_pages_status ON pages(status);
-        CREATE INDEX IF NOT EXISTS idx_pages_naid   ON pages(na_id);
-        CREATE INDEX IF NOT EXISTS idx_cases_naid   ON cases(na_id);
+        CREATE INDEX IF NOT EXISTS idx_hits_naid   ON hits(na_id);
     """)
     conn.commit()

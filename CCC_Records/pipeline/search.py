@@ -6,6 +6,7 @@
 # Github: https://github.com/usnationalarchives/Catalog-API/tree/master
 
 
+
 import argparse
 import logging
 import time
@@ -22,9 +23,13 @@ from database_init import get_connection
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+### Arguments
+DEFAULT_QUERY = '"Kings Mountain" AND "Co 4479"'
+DEFAULT_RECORD_GROUP = "146"
+
 API_URL = "https://catalog.archives.gov/api/v2/records/search"
 HEADERS = {"x-api-key": nara_key}
-DEFAULT_QUERY = '"Kings Mountain" AND "Co 4479"'
+
 PAGE_SIZE = 50          # rows per API request (max may be 100)
 MAX_RETRIES = 5
 INITIAL_BACKOFF = 2     # seconds
@@ -39,13 +44,15 @@ log = logging.getLogger(__name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
-def fetch_page(query: str, offset: int) -> dict:
+def fetch_page(query: str, offset: int, record_group: int | None = None) -> dict:
     """Fetch a single page of search results with retry + exponential backoff."""
     params = {
         "q": query,
         "rows": PAGE_SIZE,
         "offset": offset,
     }
+    if record_group is not None:
+        params["recordGroupNumber"] = record_group
     backoff = INITIAL_BACKOFF
     for attempt in range(1, MAX_RETRIES + 1):
         try:
@@ -86,19 +93,18 @@ def total_hits(data: dict) -> int:
 # Since you can only request upto 100 records at a time we need to keep track of what
 # page we are on.
 
-def index_query(query: str):
+def main(query: str, record_group: str | None = None):
     """Run the full pagination loop and store results in SQLite."""
     conn = get_connection()
     offset = 0
 
     # First request — also tells us the total
-    log.info("Searching NARA for: %s", query)
-    data = fetch_page(query, offset)
+    log.info("Searching NARA for: %s (record group: %s)", query, record_group)
+    data = fetch_page(query, offset, record_group)
     total = total_hits(data)
     log.info("Total hits: %d", total)
 
     records_added = 0
-    pages_added = 0
 
     while True:
         hits = extract_hits(data)
@@ -111,27 +117,49 @@ def index_query(query: str):
             record = source.get("record", {})
             title = record.get("title", "")
 
-            # Upsert each digital object into 'pages'
             digital_objects = record.get("digitalObjects") or []
-            for obj in digital_objects:
-                obj_id = obj.get("objectId")
-                if not obj_id:
-                    continue
-                conn.execute(
-                    "INSERT OR IGNORE INTO pages (object_id, na_id, filename) "
-                    "VALUES (?, ?, ?)",
-                    (obj_id, na_id, obj.get("objectFilename", "")),
-                )
-                pages_added += 1
+            if not digital_objects:
+                continue
+            object_id_start = digital_objects[0].get("objectId")
+            object_id_end   = digital_objects[-1].get("objectId")
+
+            # Upsert into 'hits'
+            conn.execute(
+                "INSERT OR IGNORE INTO hits (na_id, query, record_group, record_title, object_id_start, object_id_end) VALUES (?, ?, ?, ?, ?, ?)",
+                (na_id, query, record_group, title, object_id_start, object_id_end),
+            )
+            records_added += 1
 
         conn.commit()
 
         offset += PAGE_SIZE
         if offset >= total:
             break
-
+        
+        time.sleep(0.2)
         log.info("Fetching offset %d / %d …", offset, total)
-        data = fetch_page(query, offset)
+        data = fetch_page(query, offset, record_group)
 
-    log.info("Indexing complete. Records: %d | Pages: %d", records_added, pages_added)
+    log.info("Indexing complete. Records added: %d", records_added)
     conn.close()
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Collects data for extracting cases data from NARA")
+    parser.add_argument(
+        "query",
+        nargs="?",
+        default=DEFAULT_QUERY,
+        help=f'Search query (default: {DEFAULT_QUERY})',
+    )
+    parser.add_argument(
+        "--record-group",
+        type=str,
+        default=DEFAULT_RECORD_GROUP,
+        metavar="NUM",
+        help=f"NARA record group number to filter by (default: {DEFAULT_RECORD_GROUP})",
+    )
+    args = parser.parse_args()
+    main(args.query, args.record_group)

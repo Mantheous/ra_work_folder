@@ -344,3 +344,21 @@ Crazy discovery! I found out that I can actually request multiple pages with the
 "[Link to page four of results](https://catalog.archives.gov/proxy/extractedText/529913494?page=4&limit=100)"
 
 This is a huge breakthrough. The project full scale of the project seems pretty managable now. Instead of having to process 28,860,598 pages I only have to process 288,606 pages. That's a massive difference. We can take out a whole record in about 25 requests. I think we really do need to load the whole extracted text for a record into memory at a time so we can get all of the splits.
+
+## 03-23-2026
+
+### Day's objectives
+- [x] Finish [[database_init.py]]
+  - [x] Figure out how to manage the metadata
+- [ ] Run [[pipeline/search.py]]
+- [ ] Start working on the proxy fetcher
+  - [ ] Find a way to avoid the 304s
+    - This will probably work:
+    How to "Force" a Fresh JSON Response
+To bypass the cache and ensure the server knows you want data (not a webpage), you should modify your request headers:
+Cache-Control: no-cache: Tells the server and any intermediate proxies to ignore the cached version and validate with the origin.
+Accept: application/json: Explicitly tells the server you want JSON. If the server is sending HTML, it's often because this header is missing or set to */*.
+Pragma: no-cache: An older header used for compatibility to ensure no caching occurs.
+
+### Musings
+I wonder if they are currently developing the OCR. It's pretty unstable right now and they don't have it blocked off. My roomate was telling me about how sometimes they will make a server only respond when the request is coming from uses of their website. He said there is an easy work around so even if they do add that I don't think that is too big of a problem. Which makes me think that they plan on making it publicly availible.
