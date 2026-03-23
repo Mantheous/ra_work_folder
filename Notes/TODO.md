@@ -34,8 +34,8 @@
     - [ ] NLP to extract names
 
 ### Pipeline
- - [ ] Database init
- - [ ] Search
+ - [x] Database init
+ - [x] Search
  - [ ] Extract
     - [ ] Nicely attempt multiple times
  - [ ] Segment

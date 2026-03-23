@@ -26,7 +26,10 @@ from database_init import get_connection
 # ---------------------------------------------------------------------------
 ### Arguments
 DEFAULT_QUERY = '"Kings Mountain" AND "Co 4479"'
-DEFAULT_RECORD_GROUP = None
+DEFAULT_RECORD_GROUP = "146" 
+# Don't set this to None. It will break unless you do some modifications on the code.
+# Basically what you would have to do is get it to take the record group from the 
+# response which wouldn't be too hard
 
 API_URL = "https://catalog.archives.gov/api/v2/records/search"
 HEADERS = {"x-api-key": nara_key}

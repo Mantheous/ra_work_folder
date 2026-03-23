@@ -355,8 +355,8 @@ One thing I noticed was that there are often multiple documents that report weig
 - [x] Finish [[database_init.py]]
   - [x] Figure out how to manage the metadata
 - [x] Run [[pipeline/search.py]]
-- [ ] Start working on the proxy fetcher
-  - [ ] Find a way to avoid the 304s
+- [x] Start working on the proxy fetcher
+  - [x] Find a way to avoid the 304s
     - This will probably work:
     How to "Force" a Fresh JSON Response
 To bypass the cache and ensure the server knows you want data (not a webpage), you should modify your request headers:
@@ -370,3 +370,12 @@ I wonder if they are currently developing the OCR. It's pretty unstable right no
 ### 20 results
 It turns out the API is not giving me what I thought it would give me. It is only giving me 20 results. Not fifty.
 That was just a halucination in my AI generated code. How embarasing.
+
+### Search is finished
+At least for now. I have populated the database and I know that it has the data that I want it to have. It's pretty fast to get the stuff out so I am not going to worry too much about data validation. I think that will come out pretty easy if we move to the next step. Since it runs in under a minute it's not too big of a deal to fix it and re run it.
+
+### Discoveries
+I did a bunch of fidling with the server. It looks like you can just spam it when it give you html. No problem. When it gives you empty json then you have to wait for the server to actualy perform OCR. That is really slow but it does it iteratively. It starts at the begining and just starts doing the documents.
+
+### Next Steps
+So we have a pretty good stratagy on how to aproach this. The small thing that I need to fix that is pretty easy is the extractor is recording logging info into the database, and not the extracted text. It's chill, but embarassingly poorly generated. It's still a pretty good start on the script that I need though.

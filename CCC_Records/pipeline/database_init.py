@@ -33,5 +33,18 @@ def _create_tables(conn):
             raw_text        TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_hits_naid   ON hits(na_id);
+
+        CREATE TABLE IF NOT EXISTS extraction_chunks (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            na_id           TEXT NOT NULL,
+            chunk_page      INT  NOT NULL,      -- the ?page= param (1-indexed)
+            total_objects   INT,                -- "total" from the API response
+            extracted_text  TEXT,               -- concatenated text from digitalObjects in this chunk
+            status          TEXT NOT NULL DEFAULT 'pending',  -- pending | done | failed
+            attempts        INT  NOT NULL DEFAULT 0,
+            last_attempt    TEXT,               -- ISO timestamp of last attempt
+            UNIQUE(na_id, chunk_page)
+        );
+        CREATE INDEX IF NOT EXISTS idx_chunks_naid ON extraction_chunks(na_id);
     """)
     conn.commit()
