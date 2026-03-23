@@ -426,3 +426,4 @@ FodyWeavers.xsd
 *.msm
 *.msp
 CCC_Records/extractor/ccc_records.db-shm
+/CCC_Records/api_pages

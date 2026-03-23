@@ -25,7 +25,7 @@ from database_init import get_connection
 # ---------------------------------------------------------------------------
 ### Arguments
 DEFAULT_QUERY = '"Kings Mountain" AND "Co 4479"'
-DEFAULT_RECORD_GROUP = "146"
+DEFAULT_RECORD_GROUP = None
 
 API_URL = "https://catalog.archives.gov/api/v2/records/search"
 HEADERS = {"x-api-key": nara_key}
@@ -132,7 +132,7 @@ def main(query: str, record_group: str | None = None):
 
         conn.commit()
 
-        offset += PAGE_SIZE
+        offset += len(hits)  # Use actual returned count, not PAGE_SIZE
         if offset >= total:
             break
         
