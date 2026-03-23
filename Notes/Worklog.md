@@ -345,6 +345,10 @@ Crazy discovery! I found out that I can actually request multiple pages with the
 
 This is a huge breakthrough. The project full scale of the project seems pretty managable now. Instead of having to process 28,860,598 pages I only have to process 288,606 pages. That's a massive difference. We can take out a whole record in about 25 requests. I think we really do need to load the whole extracted text for a record into memory at a time so we can get all of the splits.
 
+### Data
+One thing I noticed was that there are often multiple documents that report weight that have different dates. Now that I have a good sample of data I can start building the JSON structure.
+
+
 ## 03-23-2026
 
 ### Day's objectives
