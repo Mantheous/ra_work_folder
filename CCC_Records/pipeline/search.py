@@ -8,6 +8,7 @@
 
 
 import argparse
+import json
 import logging
 import time
 import sys
@@ -30,9 +31,11 @@ DEFAULT_RECORD_GROUP = None
 API_URL = "https://catalog.archives.gov/api/v2/records/search"
 HEADERS = {"x-api-key": nara_key}
 
-PAGE_SIZE = 50          # rows per API request (max may be 100)
+PAGE_LIMIT = 100         # max results per page (limit param)
 MAX_RETRIES = 5
 INITIAL_BACKOFF = 2     # seconds
+
+API_PAGES_DIR = Path(__file__).resolve().parent.parent / "api_pages"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -44,12 +47,12 @@ log = logging.getLogger(__name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
-def fetch_page(query: str, offset: int, record_group: int | None = None) -> dict:
+def fetch_page(query: str, page: int, record_group: int | None = None) -> dict:
     """Fetch a single page of search results with retry + exponential backoff."""
     params = {
         "q": query,
-        "rows": PAGE_SIZE,
-        "offset": offset,
+        "limit": PAGE_LIMIT,
+        "page": page,
     }
     if record_group is not None:
         params["recordGroupNumber"] = record_group
@@ -96,11 +99,14 @@ def total_hits(data: dict) -> int:
 def main(query: str, record_group: str | None = None):
     """Run the full pagination loop and store results in SQLite."""
     conn = get_connection()
-    offset = 0
+    page = 1
+
+    # Ensure output directory exists
+    API_PAGES_DIR.mkdir(parents=True, exist_ok=True)
 
     # First request — also tells us the total
     log.info("Searching NARA for: %s (record group: %s)", query, record_group)
-    data = fetch_page(query, offset, record_group)
+    data = fetch_page(query, page, record_group)
     total = total_hits(data)
     log.info("Total hits: %d", total)
 
@@ -110,6 +116,12 @@ def main(query: str, record_group: str | None = None):
         hits = extract_hits(data)
         if not hits:
             break
+
+        # Save raw API response for this page
+        page_file = API_PAGES_DIR / f"page_{page:03d}.json"
+        with open(page_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        log.info("Saved page %d to %s", page, page_file.name)
 
         for hit in hits:
             na_id = hit.get("_id")
@@ -132,13 +144,14 @@ def main(query: str, record_group: str | None = None):
 
         conn.commit()
 
-        offset += len(hits)  # Use actual returned count, not PAGE_SIZE
-        if offset >= total:
+        page += 1
+        fetched_so_far = (page - 1) * PAGE_LIMIT
+        if fetched_so_far >= total:
             break
         
         time.sleep(0.2)
-        log.info("Fetching offset %d / %d …", offset, total)
-        data = fetch_page(query, offset, record_group)
+        log.info("Fetching page %d (≈offset %d / %d) …", page, fetched_so_far, total)
+        data = fetch_page(query, page, record_group)
 
     log.info("Indexing complete. Records added: %d", records_added)
     conn.close()

@@ -354,7 +354,7 @@ One thing I noticed was that there are often multiple documents that report weig
 ### Day's objectives
 - [x] Finish [[database_init.py]]
   - [x] Figure out how to manage the metadata
-- [ ] Run [[pipeline/search.py]]
+- [x] Run [[pipeline/search.py]]
 - [ ] Start working on the proxy fetcher
   - [ ] Find a way to avoid the 304s
     - This will probably work:
@@ -366,3 +366,7 @@ Pragma: no-cache: An older header used for compatibility to ensure no caching oc
 
 ### Musings
 I wonder if they are currently developing the OCR. It's pretty unstable right now and they don't have it blocked off. My roomate was telling me about how sometimes they will make a server only respond when the request is coming from uses of their website. He said there is an easy work around so even if they do add that I don't think that is too big of a problem. Which makes me think that they plan on making it publicly availible.
+
+### 20 results
+It turns out the API is not giving me what I thought it would give me. It is only giving me 20 results. Not fifty.
+That was just a halucination in my AI generated code. How embarasing.

@@ -23,7 +23,7 @@ def _create_tables(conn):
     """Create the database schema if it does not already exist."""
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS hits (
-            na_id           TEXT PRIMARY KEY,      
+            na_id           TEXT PRIMARY KEY,    
             query           TEXT NOT NULL,
             record_group    TEXT NOT NULL,
             record_title    TEXT NOT NULL,
