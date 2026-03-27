@@ -379,3 +379,27 @@ I did a bunch of fidling with the server. It looks like you can just spam it whe
 
 ### Next Steps
 So we have a pretty good stratagy on how to aproach this. The small thing that I need to fix that is pretty easy is the extractor is recording logging info into the database, and not the extracted text. It's chill, but embarassingly poorly generated. It's still a pretty good start on the script that I need though.
+
+## 03-26-2026
+
+### Day's Objectives
+- [x] Extractor
+
+
+### Discoveries
+It looks like the cache of OCR text clears after a while. I am not sure how long it takes. That means we really do just have to wait for it to generate.
+
+### Async
+I switched to an async extractor and it finished like the whole thing in 20 minutes. That means that this is actually going to be super chill. We can probably go end to end on the pipeline in a day. That also means I have no idea what is happening on the back end. I don't think it is actually having to generate them. It's just a black box. This is was going to be the largest bottleneck in the pipeline. The shear size of interactions that this was going to require put the time estimate for this step to be over a month of run time. I think that now the bottleneck will be NLP which we can probably run locally and really do some hardware acceleration. I mean, I have a whole computer lab of pretty powerful computer. They all have GPUs and good CPUs so we can coooook. I love hardware acceleration.
+
+### Next Steps
+I need to do a bit of validation. The data is starting to get so big and messy that I can't keep it tied down. I need to update the figma board. That will help me keep the code in control. The main goal of tomorrow is to get the segmenter done and start on NLP
+
+## 03-27-2026
+
+### Day's Objectives
+- [ ] Segmenter
+- [ ] NLP
+- [ ] Update Figma
+
+### Discoveries

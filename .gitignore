@@ -431,3 +431,6 @@ CCC_Records/extractor/ccc_records.db-shm
 *.db-wal
 *.db-wal
 *.db-shm
+/CCC_Records/extracted_text
+CCC_Records/pipeline/ccc_records.db
+CCC_Records/pipeline/ccc_records.db

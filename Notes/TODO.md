@@ -36,8 +36,7 @@
 ### Pipeline
  - [x] Database init
  - [x] Search
- - [ ] Extract
-    - [ ] Nicely attempt multiple times
+ - [x] Extract
  - [ ] Segment
     - [x] Find method to split cases
  - [ ] NLP

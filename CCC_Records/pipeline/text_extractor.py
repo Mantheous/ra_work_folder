@@ -1,16 +1,19 @@
-# STEP 2: Extract text from NARA proxy server
+# STEP 2: Extract text from NARA proxy server (async version)
 # Reads hits from the database that don't have raw_text yet,
 # fetches OCR text in chunks of 100 via the proxy API,
 # tracks progress in the extraction_chunks table,
 # and assembles the final raw_text once all chunks are done.
+#
+# Chunks are fetched concurrently using asyncio + aiohttp so that
+# other chunks/NAIDs can proceed while one is waiting on backoff.
 
+import asyncio
 import logging
 import math
 import random
-import time
 from datetime import datetime, timezone
 
-import requests
+import aiohttp
 
 from database_init import get_connection
 
@@ -27,6 +30,7 @@ MAX_BACKOFF = 600          # Cap backoff at 10 minutes
 JITTER_FRACTION = 0.25     # Add 0-25% random jitter to backoff delays
 POLITE_DELAY = 0.1         # Seconds between successful fetches
 REQUEST_TIMEOUT = 60       # Seconds before a request times out
+MAX_CONCURRENT = 10        # Max simultaneous chunk fetches
 
 # Browser-like headers to reduce likelihood of being blocked/rate-limited
 HEADERS = {
@@ -36,8 +40,8 @@ HEADERS = {
         "Chrome/120.0.0.0 Safari/537.36"
     ),
     "Accept": "application/json",
-    "Cache-Control": "no-cache",
-    "Pragma": "no-cache",
+    "Cache-Control": "no-cache",  # Prevents 304 responses so each request is like a hard reload
+    "Pragma": "no-cache",  # Ditto
     "Referer": "https://catalog.archives.gov/",
 }
 
@@ -54,10 +58,40 @@ class ConsecutiveTimeoutError(Exception):
 
 
 # ---------------------------------------------------------------------------
-# Fetching with tiered retry strategy
+# Shared mutable state (protected by asyncio.Lock)
 # ---------------------------------------------------------------------------
-def fetch_chunk(session: requests.Session, na_id: str, page: int,
-                consecutive_timeouts: list) -> dict | None:
+class TimeoutTracker:
+    """Thread-safe tracker for consecutive timeouts across concurrent tasks."""
+
+    def __init__(self):
+        self._count = 0
+        self._lock = asyncio.Lock()
+
+    async def record_success(self):
+        async with self._lock:
+            self._count = 0
+
+    async def record_timeout(self, na_id: str, page: int):
+        async with self._lock:
+            self._count += 1
+            current = self._count
+        log.error(
+            "  na_id=%s page=%d: REQUEST TIMED OUT (%d consecutive)",
+            na_id, page, current,
+        )
+        if current >= 2:
+            raise ConsecutiveTimeoutError(
+                f"Two consecutive timeouts. Stopping program. "
+                f"Last: na_id={na_id} page={page}"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Fetching with tiered retry strategy (async)
+# ---------------------------------------------------------------------------
+async def fetch_chunk(session: aiohttp.ClientSession, na_id: str, page: int,
+                      timeout_tracker: TimeoutTracker,
+                      semaphore: asyncio.Semaphore | None = None) -> dict | None:
     """
     Fetch a single chunk (page of up to 100 digitalObjects) from the proxy.
 
@@ -67,98 +101,111 @@ def fetch_chunk(session: requests.Session, na_id: str, page: int,
       - Timeout        -> if 2 in a row, raise ConsecutiveTimeoutError to stop program
 
     Returns the parsed JSON dict on success, or None after exhausting retries.
-    The consecutive_timeouts list is used as a mutable counter across calls:
-      consecutive_timeouts[0] tracks how many timeouts have happened in a row.
+
+    When a semaphore is provided, the semaphore is held during active network
+    requests but RELEASED during backoff sleeps so other tasks can proceed.
     """
     url = f"{BASE_URL}{na_id}"
     html_attempts = 0
     empty_attempts = 0
     backoff_delay = INITIAL_BACKOFF
+    client_timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)
 
     max_total_attempts = MAX_HTML_RETRIES + MAX_EMPTY_RETRIES  # absolute safety cap
 
     for attempt in range(1, max_total_attempts + 1):
+        # Acquire the semaphore for the actual network request
+        if semaphore is not None:
+            await semaphore.acquire()
+
+        # Track whether we already released the semaphore (for backoff/error paths).
+        # The finally block will release it if we haven't already.
+        sem_released = False
+
         try:
             params = {"page": page, "limit": CHUNK_LIMIT}
             if attempt > 1:
-                params["_t"] = int(time.time() * 1000)
+                params["_t"] = int(asyncio.get_event_loop().time() * 1000)
 
-            resp = session.get(url, headers=HEADERS, params=params, timeout=REQUEST_TIMEOUT)
+            async with session.get(url, headers=HEADERS, params=params,
+                                   timeout=client_timeout) as resp:
+                # --- SUCCESS: reset timeout counter ---
+                await timeout_tracker.record_success()
 
-            # --- SUCCESS: reset timeout counter ---
-            consecutive_timeouts[0] = 0
+                # --- CHECK: HTML response (server returned the React SPA shell) ---
+                content_type = resp.headers.get("Content-Type", "")
+                if "html" in content_type.lower():
+                    html_attempts += 1
+                    if html_attempts >= MAX_HTML_RETRIES:
+                        log.error(
+                            "  na_id=%s page=%d: Got HTML %d times in a row. Giving up.",
+                            na_id, page, html_attempts,
+                        )
+                        return None
+                    log.warning(
+                        "  [HTML %d/%d] na_id=%s page=%d: Got HTML, retrying immediately...",
+                        html_attempts, MAX_HTML_RETRIES, na_id, page,
+                    )
+                    continue  # Retry immediately, no delay
 
-            # --- CHECK: HTML response (server returned the React SPA shell) ---
-            content_type = resp.headers.get("Content-Type", "")
-            if "html" in content_type.lower():
-                html_attempts += 1
-                if html_attempts >= MAX_HTML_RETRIES:
-                    log.error(
-                        "  na_id=%s page=%d: Got HTML %d times in a row. Giving up.",
-                        na_id, page, html_attempts,
+                resp.raise_for_status()
+                data = await resp.json()
+
+                # --- CHECK: Missing digitalObjects key ---
+                if "digitalObjects" not in data:
+                    log.warning(
+                        "  na_id=%s page=%d: Response missing 'digitalObjects': %s",
+                        na_id, page, list(data.keys()),
                     )
                     return None
-                log.warning(
-                    "  [HTML %d/%d] na_id=%s page=%d: Got HTML, retrying immediately...",
-                    html_attempts, MAX_HTML_RETRIES, na_id, page,
-                )
-                continue  # Retry immediately, no delay
 
-            resp.raise_for_status()
-            data = resp.json()
-
-            # --- CHECK: Missing digitalObjects key ---
-            if "digitalObjects" not in data:
-                log.warning(
-                    "  na_id=%s page=%d: Response missing 'digitalObjects': %s",
-                    na_id, page, list(data.keys()),
-                )
-                return None
-
-            # --- CHECK: Empty digitalObjects (server is processing/not ready) ---
-            if len(data.get("digitalObjects", [])) == 0:
-                empty_attempts += 1
-                if empty_attempts >= MAX_EMPTY_RETRIES:
-                    log.error(
-                        "  na_id=%s page=%d: Got empty JSON %d times. Giving up.",
-                        na_id, page, empty_attempts,
+                # --- CHECK: Empty digitalObjects (server is processing/not ready) ---
+                if len(data.get("digitalObjects", [])) == 0:
+                    empty_attempts += 1
+                    if empty_attempts >= MAX_EMPTY_RETRIES:
+                        log.error(
+                            "  na_id=%s page=%d: Got empty JSON %d times. Giving up.",
+                            na_id, page, empty_attempts,
+                        )
+                        return None
+                    jitter = backoff_delay * random.uniform(0, JITTER_FRACTION)
+                    wait = min(backoff_delay + jitter, MAX_BACKOFF)
+                    log.warning(
+                        "  [EMPTY %d/%d] na_id=%s page=%d: Empty JSON. Backing off %.0fs...",
+                        empty_attempts, MAX_EMPTY_RETRIES, na_id, page, wait,
                     )
-                    return None
-                jitter = backoff_delay * random.uniform(0, JITTER_FRACTION)
-                wait = min(backoff_delay + jitter, MAX_BACKOFF)
-                log.warning(
-                    "  [EMPTY %d/%d] na_id=%s page=%d: Empty JSON. Backing off %.0fs...",
-                    empty_attempts, MAX_EMPTY_RETRIES, na_id, page, wait,
-                )
-                time.sleep(wait)
-                backoff_delay = min(backoff_delay * 2, MAX_BACKOFF)
-                continue
+                    # Release semaphore BEFORE sleeping so other tasks can proceed
+                    if semaphore is not None:
+                        semaphore.release()
+                        sem_released = True
+                    await asyncio.sleep(wait)
+                    backoff_delay = min(backoff_delay * 2, MAX_BACKOFF)
+                    continue  # Will re-acquire semaphore at top of loop
 
-            # --- SUCCESS: Got real data ---
-            return data
+                # --- SUCCESS: Got real data ---
+                return data
 
-        except requests.exceptions.Timeout:
-            consecutive_timeouts[0] += 1
-            log.error(
-                "  na_id=%s page=%d: REQUEST TIMED OUT (%d consecutive)",
-                na_id, page, consecutive_timeouts[0],
-            )
-            if consecutive_timeouts[0] >= 2:
-                raise ConsecutiveTimeoutError(
-                    f"Two consecutive timeouts. Stopping program. "
-                    f"Last: na_id={na_id} page={page}"
-                )
+        except asyncio.TimeoutError:
+            await timeout_tracker.record_timeout(na_id, page)
             continue  # Try once more before potentially stopping
 
-        except requests.RequestException as e:
-            consecutive_timeouts[0] = 0
+        except aiohttp.ClientError as e:
+            await timeout_tracker.record_success()  # Not a timeout, reset counter
             log.warning(
                 "  [Attempt %d] na_id=%s page=%d: %s",
                 attempt, na_id, page, e,
             )
-            # Generic network error: brief pause then retry
-            time.sleep(1)
-            continue
+            # Release semaphore before sleeping on error
+            if semaphore is not None:
+                semaphore.release()
+                sem_released = True
+            await asyncio.sleep(1)
+            continue  # Will re-acquire semaphore at top of loop
+
+        finally:
+            # Release semaphore if not already released (normal return, HTML retry, timeout, etc.)
+            if semaphore is not None and not sem_released:
+                semaphore.release()
 
     return None
 
@@ -166,7 +213,8 @@ def fetch_chunk(session: requests.Session, na_id: str, page: int,
 # ---------------------------------------------------------------------------
 # Step 1: Populate extraction_chunks for hits that need text
 # ---------------------------------------------------------------------------
-def populate_chunks(conn, session: requests.Session, consecutive_timeouts: list):
+async def populate_chunks(conn, session: aiohttp.ClientSession,
+                          timeout_tracker: TimeoutTracker):
     """
     For each hit with raw_text IS NULL, ensure extraction_chunks rows exist.
     If no rows exist yet for a hit, fetch page 1 to discover the total,
@@ -195,9 +243,10 @@ def populate_chunks(conn, session: requests.Session, consecutive_timeouts: list)
         if existing > 0:
             continue  # Already populated
 
-        # Fetch page 1 to discover total
+        # Fetch page 1 to discover total (no semaphore — sequential discovery)
         log.info("Discovering total for na_id=%s …", na_id)
-        data = fetch_chunk(session, na_id, page=1, consecutive_timeouts=consecutive_timeouts)
+        data = await fetch_chunk(session, na_id, page=1,
+                                 timeout_tracker=timeout_tracker)
 
         if data is None:
             log.error("  Could not reach proxy for na_id=%s. Skipping chunk creation.", na_id)
@@ -238,16 +287,54 @@ def populate_chunks(conn, session: requests.Session, consecutive_timeouts: list)
         populated += 1
         log.info("  Stored page 1 for na_id=%s (%d objects in chunk)", na_id, len(data.get("digitalObjects", [])))
 
-        time.sleep(POLITE_DELAY)
+        await asyncio.sleep(POLITE_DELAY)
 
     return populated
 
 
 # ---------------------------------------------------------------------------
-# Step 2: Fetch all pending/failed chunks
+# Step 2: Fetch all pending/failed chunks (concurrently)
 # ---------------------------------------------------------------------------
-def fetch_pending_chunks(conn, session: requests.Session, consecutive_timeouts: list):
-    """Fetch text for all extraction_chunks that are not yet done."""
+async def _fetch_one_chunk(conn, session: aiohttp.ClientSession,
+                           chunk_id: int, na_id: str, chunk_page: int,
+                           timeout_tracker: TimeoutTracker,
+                           semaphore: asyncio.Semaphore,
+                           results: dict):
+    """Fetch a single chunk and record the result in the database."""
+    now = datetime.now(timezone.utc).isoformat()
+
+    log.info("Fetching na_id=%s chunk page=%d …", na_id, chunk_page)
+
+    data = await fetch_chunk(session, na_id, chunk_page,
+                             timeout_tracker=timeout_tracker,
+                             semaphore=semaphore)
+
+    if data is not None:
+        text = _extract_text_from_response(data)
+        conn.execute(
+            """UPDATE extraction_chunks
+               SET extracted_text = ?, status = 'done',
+                   attempts = attempts + 1, last_attempt = ?
+               WHERE id = ?""",
+            (text, now, chunk_id),
+        )
+        results["done"] += 1
+    else:
+        conn.execute(
+            """UPDATE extraction_chunks
+               SET status = 'failed',
+                   attempts = attempts + 1, last_attempt = ?
+               WHERE id = ?""",
+            (now, chunk_id),
+        )
+        results["failed"] += 1
+
+    conn.commit()  # Checkpoint after every chunk
+
+
+async def fetch_pending_chunks(conn, session: aiohttp.ClientSession,
+                               timeout_tracker: TimeoutTracker):
+    """Fetch text for all extraction_chunks that are not yet done, concurrently."""
     pending = conn.execute(
         """SELECT id, na_id, chunk_page
            FROM extraction_chunks
@@ -259,49 +346,21 @@ def fetch_pending_chunks(conn, session: requests.Session, consecutive_timeouts: 
         log.info("No pending chunks to fetch.")
         return 0, 0
 
-    log.info("Found %d pending/failed chunks to fetch.", len(pending))
-    done_count = 0
-    fail_count = 0
+    log.info("Found %d pending/failed chunks to fetch (max %d concurrent).",
+             len(pending), MAX_CONCURRENT)
 
-    for row in pending:
-        chunk_id = row["id"]
-        na_id = row["na_id"]
-        chunk_page = row["chunk_page"]
-        now = datetime.now(timezone.utc).isoformat()
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT)
+    results = {"done": 0, "failed": 0}
 
-        log.info(
-            "Fetching na_id=%s chunk page=%d  [%d/%d] …",
-            na_id, chunk_page, done_count + fail_count + 1, len(pending),
-        )
+    tasks = [
+        _fetch_one_chunk(conn, session, row["id"], row["na_id"], row["chunk_page"],
+                         timeout_tracker, semaphore, results)
+        for row in pending
+    ]
 
-        data = fetch_chunk(session, na_id, chunk_page, consecutive_timeouts=consecutive_timeouts)
+    await asyncio.gather(*tasks, return_exceptions=True)
 
-        if data is not None:
-            text = _extract_text_from_response(data)
-            conn.execute(
-                """UPDATE extraction_chunks
-                   SET extracted_text = ?, status = 'done',
-                       attempts = attempts + 1, last_attempt = ?
-                   WHERE id = ?""",
-                (text, now, chunk_id),
-            )
-            done_count += 1
-        else:
-            conn.execute(
-                """UPDATE extraction_chunks
-                   SET status = 'failed',
-                       attempts = attempts + 1, last_attempt = ?
-                   WHERE id = ?""",
-                (now, chunk_id),
-            )
-            fail_count += 1
-
-        conn.commit()  # Checkpoint after every chunk
-
-        # Polite delay between requests
-        time.sleep(POLITE_DELAY)
-
-    return done_count, fail_count
+    return results["done"], results["failed"]
 
 
 # ---------------------------------------------------------------------------
@@ -378,24 +437,24 @@ def _extract_text_from_response(data: dict) -> str:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-def main():
+async def main():
     conn = get_connection()
-    consecutive_timeouts = [0]  # Mutable counter shared across all fetch calls
+    timeout_tracker = TimeoutTracker()
 
     try:
-        with requests.Session() as session:
+        async with aiohttp.ClientSession() as session:
             # Step 1: Populate chunks for hits that need extraction
             log.info("=" * 60)
             log.info("STEP 1: Populating extraction chunks")
             log.info("=" * 60)
-            populated = populate_chunks(conn, session, consecutive_timeouts)
+            populated = await populate_chunks(conn, session, timeout_tracker)
             log.info("Populated chunks for %d new hits.", populated)
 
-            # Step 2: Fetch all pending/failed chunks
+            # Step 2: Fetch all pending/failed chunks (concurrently)
             log.info("=" * 60)
-            log.info("STEP 2: Fetching pending chunks")
+            log.info("STEP 2: Fetching pending chunks (up to %d concurrent)", MAX_CONCURRENT)
             log.info("=" * 60)
-            done, failed = fetch_pending_chunks(conn, session, consecutive_timeouts)
+            done, failed = await fetch_pending_chunks(conn, session, timeout_tracker)
             log.info("Fetched: %d done, %d failed.", done, failed)
 
             # Step 3: Assemble completed hits
@@ -434,4 +493,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

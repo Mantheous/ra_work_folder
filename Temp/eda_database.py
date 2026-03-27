@@ -9,7 +9,13 @@ for table in tables:
     count = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
     print(f'{table}: {count} entries')
 print()
-print('Sample rows from extraction_chunks:')
-for row in conn.execute("SELECT na_id, chunk_page, extracted_text FROM extraction_chunks LIMIT 25"):
-    print(f"  {row['na_id']} | {row['chunk_page']} | {row['extracted_text']}")
+print("=" * 60)
+print('Sample rows from hits:')
+print("=" * 60)
+for row in conn.execute("""
+    SELECT na_id, status, object_id_start, object_id_end, raw_text 
+    FROM hits 
+    WHERE na_id = '489808685'
+"""):
+    print(f"  {row['na_id']} | {row['status']} | {row['object_id_start']} | {row['object_id_end']} | {row['raw_text'][:100]}")
 conn.close()
