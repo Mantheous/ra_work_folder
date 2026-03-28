@@ -1,0 +1,251 @@
+{
+    "enrollee_id": "CC4-135536",
+    "serial_no": "2-322448",
+    "source": {
+        "naid": "529913494",
+        "url": "https://catalog.archives.gov/id/529913494?objectPage=6",
+        "start-page": 6,
+        "end-page": 27,
+        "record-group": 146,
+        "access-date": "2026-03-27"
+    },
+    "general_info": {
+        "name": {
+            "last": "Gladden",
+            "first": "Furman",
+            "middle": null
+        },
+        "class": "Junior",
+        "state": "NC",
+        "dob": "1909-01-12",
+        "dob_raw": "January 12 1909",
+        "birthplace": "Rutherford County, NC",
+        "address": "Forest City, NC",
+        "citizenship": "native born",
+        "color": null,
+        "military_service": "None",
+        "education_grade": 7,
+        "occupation": "Farming",
+        "unemployed_since": "1934-09",
+        "previous_ccc_member": false,
+        "nearest_relative": {
+            "name": "Mrs. Frigh Gladden",
+            "address": "Forest City, NC",
+            "relation": "mother"
+        }
+    },
+    "enrollment": {
+        "date": "1935-04-24",
+        "place": "Asheville, NC",
+        "term_end": "1935-10-24",
+        "enrolling_officer": "H. H. Haag, Capt. Inf.",
+        "selecting_agency": "Rutherford Co. E.R.A. Office"
+    },
+    "reenrollments": [
+        {
+            "sequence": 1,
+            "company": "225th",
+            "camp": "G-129",
+            "date": "1939-10-18",
+            "commander": "Joseph Petrolino"
+        }
+    ],
+    "service_record": [
+        {
+            "sequence": 1,
+            "from": "1935-04-24",
+            "to": "1935-08-01",
+            "department": "War Department",
+            "company": "428",
+            "camp": "N.C. F-14",
+            "location": "Balsam Grove, NC",
+            "work_type": "Laborer",
+            "performance": "Satisfactory",
+            "awol_days": 0,
+            "awop_days": 0,
+            "transferred_to": null,
+            "last_paid_date": "1935-08-01",
+            "disbursing_officer": "H. H. Haag, Capt. Inf.",
+            "debts": {
+                "clothing": 0.0,
+                "equipment": 0.0,
+                "camp_exchange": 0.0,
+                "company_fund": 0.0,
+                "usamps": 0.0,
+                "other": 0.0
+            },
+            "remarks": null,
+            "verified_by": "H. H. Haag, Capt. Inf."
+        }
+    ],
+    "physical_exam": {
+        "acceptance": {
+            "place": "Asheville, NC",
+            "date": "1935-04-25",
+            "qualified": true,
+            "rejection_reason": null,
+            "examiner": "Wesley Byerly, Capt. Med. Res."
+        },
+        "enrollment": {
+            "height_in": 68.5,
+            "weight_lbs": 158,
+            "vision": {
+                "right": "20/20",
+                "left": "20/20",
+                "conditions": "Negative"
+            },
+            "hearing": {
+                "right": "20/20",
+                "left": "20/20",
+                "conditions": "Negative"
+            },
+            "teeth": {
+                "upper_missing": "none",
+                "lower_missing": "none",
+                "mouth_gums": "Negative"
+            },
+            "complexion": null,
+            "eye_color": null,
+            "hair_color": "Brown",
+            "scars_marks": null,
+            "general_exam": "Negative",
+            "surgical": "Negative",
+            "locomotion": "Negative",
+            "cardiovascular": "Normal",
+            "lungs": "Normal",
+            "genitourinary": "Negative",
+            "neuropsychiatric": "Denies Enuresis and Epilepsy",
+            "urinalysis": "Not Made",
+            "qualified": true,
+            "disqualification_reason": null,
+            "remarks": null,
+            "examiner": "Wesley Byerly, Capt. Med. Res.",
+            "date": "1935-04-25"
+        },
+        "discharge_exam": {
+            "place": "Balsam Grove, NC",
+            "date": "1935-08-06",
+            "no_change": false,
+            "notes": "Strong odor of whiskey on breath; actions consistent with moderate intoxication",
+            "examiner": null
+        },
+        "enrollee_disability_statement": "no"
+    },
+    "fingerprints": {
+        "taken_at": "Fort Dix, NJ",
+        "date": "1939-10-10",
+        "forwarded_to": "2nd Corps Area",
+        "date_accepted": "1939-10-16"
+    },
+    "inoculations": [
+        {
+            "vaccine": "typhoid-paratyphoid",
+            "dose": 1,
+            "date": "1935-04-26",
+            "result": null
+        },
+        {
+            "vaccine": "typhoid-paratyphoid",
+            "dose": 2,
+            "date": "1935-05-01",
+            "result": null
+        },
+        {
+            "vaccine": "typhoid-paratyphoid",
+            "dose": 3,
+            "date": "1935-05-06",
+            "result": null
+        },
+        {
+            "vaccine": "smallpox",
+            "dose": 1,
+            "date": "1935-04-26",
+            "result": "immune"
+        }
+    ],
+    "education_activities": {
+        "general_vocational": [
+            {
+                "subject": "Social Subject",
+                "date": "1939-10-17",
+                "rating": "VG"
+            }
+        ],
+        "job_training": [
+            {
+                "type": "Road Construction",
+                "date": "1939-10-17",
+                "rating": "VG"
+            }
+        ],
+        "special_schools": [],
+        "certificates": [],
+        "personal_qualities": "dominant",
+        "adviser_estimate": "Labor ASIS",
+        "outstanding_accomplishments": null
+    },
+    "leader_appointments": [],
+    "absences": [
+        {
+            "from": "1939-12-22",
+            "to": "1939-12-26",
+            "type": "AWP",
+            "authority": "Par. 39a(3)(a) REG. W.D. 1937"
+        }
+    ],
+    "illness_injury": [],
+    "allotments": [
+        {
+            "sequence": 1,
+            "allottee_name": "Mrs. Frigh Gladden",
+            "address": "Forest City, NC",
+            "amount": 25.0,
+            "from": "1935-04-24",
+            "to": "1935-08-01",
+            "termination_notified": true,
+            "termination_date": "1935-08-01"
+        }
+    ],
+    "disciplinary": [
+        {
+            "hearing_no": "168",
+            "date": "1935-08-01",
+            "company": "428",
+            "camp": "N.C. F-14",
+            "location": "Balsam Grove, NC",
+            "charge": "Drinking and having liquor on the work project",
+            "offense_location": "Tennessee Bald, approx. 4 miles from camp",
+            "represented_by": null,
+            "plea": "Not Guilty",
+            "finding": "Guilty",
+            "witnesses_against": [
+                "J.E. Gouge",
+                "H.H. Haag",
+                "J.R.S. Mays"
+            ],
+            "witnesses_for": [],
+            "member_statement": "I havn't drank anything since last night about 12 oclock when I took two drinks.",
+            "prior_offenses": [
+                {
+                    "date": "1935-07-15",
+                    "offense": "Drunk in camp",
+                    "punishment": "1 week extra duty"
+                }
+            ],
+            "punishment": "Administrative discharge without forfeiture of pay",
+            "commanding_officer": "H.H. Haag, Capt. Inf.",
+            "approved_by": "HQ Dist. B, Fort McPherson, GA",
+            "approval_date": "1935-08-08"
+        }
+    ],
+    "discharge": {
+        "date": "1935-08-01",
+        "type": "administrative",
+        "location": "Balsam Grove, NC",
+        "reason": "Unwillingness to abide by rules and regulations",
+        "transport_to": "Forest City, NC",
+        "forfeiture_of_pay": false,
+        "superintendent_estimate": null,
+        "commander_certificate": null
+    }
+}

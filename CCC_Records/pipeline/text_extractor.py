@@ -1,17 +1,16 @@
 # STEP 2: Extract text from NARA proxy server (async version)
-# Reads hits from the database that don't have raw_text yet,
+# Reads hits from the database that are still pending,
 # fetches OCR text in chunks of 100 via the proxy API,
-# tracks progress in the extraction_chunks table,
-# and assembles the final raw_text once all chunks are done.
+# and stores pages as JSON in the extraction_chunks table.
 #
 # Chunks are fetched concurrently using asyncio + aiohttp so that
 # other chunks/NAIDs can proceed while one is waiting on backoff.
 
 import asyncio
+import json
 import logging
 import math
 import random
-from datetime import datetime, timezone
 
 import aiohttp
 
@@ -216,19 +215,19 @@ async def fetch_chunk(session: aiohttp.ClientSession, na_id: str, page: int,
 async def populate_chunks(conn, session: aiohttp.ClientSession,
                           timeout_tracker: TimeoutTracker):
     """
-    For each hit with raw_text IS NULL, ensure extraction_chunks rows exist.
+    For each hit with status 'pending', ensure extraction_chunks rows exist.
     If no rows exist yet for a hit, fetch page 1 to discover the total,
     then create rows for all chunks.
     """
     pending_hits = conn.execute(
-        "SELECT na_id FROM hits WHERE raw_text IS NULL"
+        "SELECT na_id FROM hits WHERE status = 'pending'"
     ).fetchall()
 
     if not pending_hits:
         log.info("No hits need text extraction.")
         return 0
 
-    log.info("Found %d hits without raw_text.", len(pending_hits))
+    log.info("Found %d pending hits.", len(pending_hits))
     populated = 0
 
     for row in pending_hits:
@@ -254,9 +253,9 @@ async def populate_chunks(conn, session: aiohttp.ClientSession,
 
         total = data.get("total", 0)
         if total == 0:
-            log.warning("  na_id=%s has total=0 objects. Marking as extracted with empty text.", na_id)
+            log.warning("  na_id=%s has total=0 objects. Marking as extracted.", na_id)
             conn.execute(
-                "UPDATE hits SET raw_text = '', status = 'extracted' WHERE na_id = ?",
+                "UPDATE hits SET status = 'extracted' WHERE na_id = ?",
                 (na_id,),
             )
             conn.commit()
@@ -269,19 +268,18 @@ async def populate_chunks(conn, session: aiohttp.ClientSession,
         for chunk_page in range(1, num_chunks + 1):
             conn.execute(
                 """INSERT OR IGNORE INTO extraction_chunks
-                   (na_id, chunk_page, total_objects, status, attempts)
-                   VALUES (?, ?, ?, 'pending', 0)""",
+                   (na_id, chunk_page, total_objects, status)
+                   VALUES (?, ?, ?, 'pending')""",
                 (na_id, chunk_page, total),
             )
 
         # The page-1 data we already fetched — store it right away
         text = _extract_text_from_response(data)
-        now = datetime.now(timezone.utc).isoformat()
         conn.execute(
             """UPDATE extraction_chunks
-               SET extracted_text = ?, status = 'done', attempts = 1, last_attempt = ?
+               SET extracted_text = ?, status = 'done'
                WHERE na_id = ? AND chunk_page = 1""",
-            (text, now, na_id),
+            (text, na_id),
         )
         conn.commit()
         populated += 1
@@ -301,8 +299,6 @@ async def _fetch_one_chunk(conn, session: aiohttp.ClientSession,
                            semaphore: asyncio.Semaphore,
                            results: dict):
     """Fetch a single chunk and record the result in the database."""
-    now = datetime.now(timezone.utc).isoformat()
-
     log.info("Fetching na_id=%s chunk page=%d …", na_id, chunk_page)
 
     data = await fetch_chunk(session, na_id, chunk_page,
@@ -313,19 +309,17 @@ async def _fetch_one_chunk(conn, session: aiohttp.ClientSession,
         text = _extract_text_from_response(data)
         conn.execute(
             """UPDATE extraction_chunks
-               SET extracted_text = ?, status = 'done',
-                   attempts = attempts + 1, last_attempt = ?
+               SET extracted_text = ?, status = 'done'
                WHERE id = ?""",
-            (text, now, chunk_id),
+            (text, chunk_id),
         )
         results["done"] += 1
     else:
         conn.execute(
             """UPDATE extraction_chunks
-               SET status = 'failed',
-                   attempts = attempts + 1, last_attempt = ?
+               SET status = 'failed'
                WHERE id = ?""",
-            (now, chunk_id),
+            (chunk_id,),
         )
         results["failed"] += 1
 
@@ -364,19 +358,19 @@ async def fetch_pending_chunks(conn, session: aiohttp.ClientSession,
 
 
 # ---------------------------------------------------------------------------
-# Step 3: Assemble completed hits
+# Step 3: Mark completed hits
 # ---------------------------------------------------------------------------
-def assemble_completed_hits(conn):
+def mark_completed_hits(conn):
     """
     For each hit where ALL extraction_chunks are 'done',
-    concatenate the text in chunk_page order and write to hits.raw_text.
+    set hits.status = 'extracted'.
+    The extracted text stays in extraction_chunks (linked by na_id FK).
     """
-    # Find na_ids where raw_text is still NULL
     candidates = conn.execute(
-        "SELECT na_id FROM hits WHERE raw_text IS NULL"
+        "SELECT na_id FROM hits WHERE status != 'extracted'"
     ).fetchall()
 
-    assembled = 0
+    marked = 0
     for row in candidates:
         na_id = row["na_id"]
 
@@ -394,27 +388,15 @@ def assemble_completed_hits(conn):
         if stats["done"] < stats["total"]:
             continue  # Not all chunks done yet
 
-        # All done — concatenate in page order
-        chunks = conn.execute(
-            """SELECT extracted_text FROM extraction_chunks
-               WHERE na_id = ? ORDER BY chunk_page""",
-            (na_id,),
-        ).fetchall()
-
-        full_text = "\n".join(
-            chunk["extracted_text"] for chunk in chunks
-            if chunk["extracted_text"]
-        )
-
         conn.execute(
-            "UPDATE hits SET raw_text = ?, status = 'extracted' WHERE na_id = ?",
-            (full_text, na_id),
+            "UPDATE hits SET status = 'extracted' WHERE na_id = ?",
+            (na_id,),
         )
-        assembled += 1
-        log.info("Assembled raw_text for na_id=%s (%d chunks)", na_id, stats["total"])
+        marked += 1
+        log.info("Marked na_id=%s as extracted (%d chunks complete)", na_id, stats["total"])
 
     conn.commit()
-    return assembled
+    return marked
 
 
 # ---------------------------------------------------------------------------
@@ -422,16 +404,22 @@ def assemble_completed_hits(conn):
 # ---------------------------------------------------------------------------
 def _extract_text_from_response(data: dict) -> str:
     """
-    Concatenate all extractedText fields from the digitalObjects in a response.
-    Objects with null extractedText are included as empty strings.
+    Build a JSON array of page entries from the digitalObjects in a response.
+    Each entry contains only the objectId and the extracted text, so that
+    the page can be cited and the source URL reconstructed later.
+
+    Returns a JSON string like:
+        [{"objectId": "529913499", "text": "..."}, ...]
     """
     digital_objects = data.get("digitalObjects", [])
-    parts = []
+    pages = []
     for obj in digital_objects:
         text = obj.get("extractedText")
-        if text:
-            parts.append(text.strip())
-    return "\n".join(parts)
+        pages.append({
+            "objectId": obj.get("objectId", ""),
+            "text": text.strip() if text else "",
+        })
+    return json.dumps(pages, ensure_ascii=False)
 
 
 # ---------------------------------------------------------------------------
@@ -457,20 +445,20 @@ async def main():
             done, failed = await fetch_pending_chunks(conn, session, timeout_tracker)
             log.info("Fetched: %d done, %d failed.", done, failed)
 
-            # Step 3: Assemble completed hits
+            # Step 3: Mark completed hits
             log.info("=" * 60)
-            log.info("STEP 3: Assembling completed hits")
+            log.info("STEP 3: Marking completed hits")
             log.info("=" * 60)
-            assembled = assemble_completed_hits(conn)
-            log.info("Assembled raw_text for %d hits.", assembled)
+            marked = mark_completed_hits(conn)
+            log.info("Marked %d hits as extracted.", marked)
 
     except ConsecutiveTimeoutError as e:
         log.error("STOPPING: %s", e)
         log.error("Progress has been saved. Re-run when connectivity is restored.")
-        # Still assemble any completed hits before exiting
-        assembled = assemble_completed_hits(conn)
-        if assembled:
-            log.info("Assembled raw_text for %d hits before stopping.", assembled)
+        # Still mark any completed hits before exiting
+        marked = mark_completed_hits(conn)
+        if marked:
+            log.info("Marked %d hits as extracted before stopping.", marked)
 
     # Summary
     log.info("=" * 60)
@@ -479,7 +467,7 @@ async def main():
     failed_chunks = conn.execute("SELECT COUNT(*) as cnt FROM extraction_chunks WHERE status = 'failed'").fetchone()["cnt"]
     pending_chunks = conn.execute("SELECT COUNT(*) as cnt FROM extraction_chunks WHERE status = 'pending'").fetchone()["cnt"]
     extracted_hits = conn.execute("SELECT COUNT(*) as cnt FROM hits WHERE status = 'extracted'").fetchone()["cnt"]
-    remaining_hits = conn.execute("SELECT COUNT(*) as cnt FROM hits WHERE raw_text IS NULL").fetchone()["cnt"]
+    remaining_hits = conn.execute("SELECT COUNT(*) as cnt FROM hits WHERE status = 'pending'").fetchone()["cnt"]
 
     log.info("SUMMARY")
     log.info("  Chunks: %d total | %d done | %d failed | %d pending", total_chunks, done_chunks, failed_chunks, pending_chunks)

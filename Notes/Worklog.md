@@ -398,8 +398,18 @@ I need to do a bit of validation. The data is starting to get so big and messy t
 ## 03-27-2026
 
 ### Day's Objectives
-- [ ] Segmenter
-- [ ] NLP
-- [ ] Update Figma
+- [x] Update Figma
+- [x] Segmenter
+- [x] Start NLP
 
-### Discoveries
+### Names
+I got some names! That something I can turn in for half credit ;)
+
+### Segmenter
+The most chill thing ever. I just had to fix the string it was searching for. Actually I did go in an make a custom matcher. It wasn't getting enough hits. Currently it matches if it is short enough and it has 50% of the right letters. There were some documents that had really bad accuracy on the OCR.
+
+### NLP
+I am going to be honest I have no idea what that code does. Need to go learn how to do it. I think it's a pretty good plan though. 
+
+### Next Steps
+Just do the NLP bro. 

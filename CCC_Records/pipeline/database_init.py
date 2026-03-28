@@ -24,27 +24,32 @@ def _create_tables(conn):
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS hits (
             na_id           TEXT PRIMARY KEY,    
-            query           TEXT NOT NULL,
             record_group    TEXT NOT NULL,
             record_title    TEXT NOT NULL,
             object_id_start INT NOT NULL, -- Starting page of the record EI the object id of the first page
             object_id_end   INT NOT NULL, -- Ending page of the record EI the object id of the last page
-            status          TEXT NOT NULL DEFAULT 'pending',
-            raw_text        TEXT
+            status          TEXT NOT NULL DEFAULT 'pending'
         );
         CREATE INDEX IF NOT EXISTS idx_hits_naid   ON hits(na_id);
 
         CREATE TABLE IF NOT EXISTS extraction_chunks (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            na_id           TEXT NOT NULL,
+            na_id           TEXT NOT NULL REFERENCES hits(na_id),
             chunk_page      INT  NOT NULL,      -- the ?page= param (1-indexed)
             total_objects   INT,                -- "total" from the API response
-            extracted_text  TEXT,               -- concatenated text from digitalObjects in this chunk
+            extracted_text  TEXT,               -- JSON array of page objects from digitalObjects in this chunk
             status          TEXT NOT NULL DEFAULT 'pending',  -- pending | done | failed
-            attempts        INT  NOT NULL DEFAULT 0,
-            last_attempt    TEXT,               -- ISO timestamp of last attempt
             UNIQUE(na_id, chunk_page)
         );
         CREATE INDEX IF NOT EXISTS idx_chunks_naid ON extraction_chunks(na_id);
+
+        CREATE TABLE IF NOT EXISTS cases (
+            case_start_id   TEXT PRIMARY KEY, -- Object Id of the first page
+            case_end_id     TEXT, -- Object Id of the last page
+            na_id           TEXT NOT NULL REFERENCES hits(na_id),
+            extracted_text  TEXT              -- JSON array of pages in the case
+            json            TEXT -- JSON of data processed with NLP
+        );
+        CREATE INDEX IF NOT EXISTS idx_cases_naid ON cases(na_id);
     """)
     conn.commit()

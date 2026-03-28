@@ -140,8 +140,8 @@ def main(query: str, record_group: str | None = None):
 
             # Upsert into 'hits'
             conn.execute(
-                "INSERT OR IGNORE INTO hits (na_id, query, record_group, record_title, object_id_start, object_id_end) VALUES (?, ?, ?, ?, ?, ?)",
-                (na_id, query, record_group, title, object_id_start, object_id_end),
+                "INSERT OR IGNORE INTO hits (na_id, record_group, record_title, object_id_start, object_id_end) VALUES (?, ?, ?, ?, ?)",
+                (na_id, record_group, title, object_id_start, object_id_end),
             )
             records_added += 1
 
