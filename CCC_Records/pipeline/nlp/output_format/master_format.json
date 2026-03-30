@@ -1,0 +1,230 @@
+{
+    "enrollee_id": "[Format: CC0-000000]",
+    "serial_no": "[Format: 0-000000]",
+    "source": {
+        "naid": "[Format: 000000000]",
+        "url": "[URL]",
+        "start-page": 0,
+        "end-page": 0,
+        "record-group": 0,
+        "access-date": "[YYYY-MM-DD]"
+    },
+    "general_info": {
+        "name": {
+            "last": "[Last Name]",
+            "first": "[First Name]",
+            "middle": "[Middle Name]"
+        },
+        "class": "[Class Designation]",
+        "state": "[State Abbreviation, e.g. NC]",
+        "dob": "[YYYY-MM-DD]",
+        "dob_raw": "[Date String as written]",
+        "birthplace": "[City, State]",
+        "address": "[City, State]",
+        "citizenship": "[Citizenship Status]",
+        "color": "[Color/Race]",
+        "military_service": "[Military Service]",
+        "education_grade": 0,
+        "occupation": "[Occupation]",
+        "unemployed_since": "[YYYY-MM-DD]",
+        "previous_ccc_member": false,
+        "nearest_relative": {
+            "name": "[Full Name]",
+            "address": "[City, State]",
+            "relation": "[Relationship]"
+        }
+    },
+    "enrollment": {
+        "date": "[YYYY-MM-DD]",
+        "place": "[City, State]",
+        "term_end": "[YYYY-MM-DD]",
+        "enrolling_officer": "[Name and Title]",
+        "selecting_agency": "[Agency Name]"
+    },
+    "reenrollments": [
+        {
+            "company": "[Company Number]",
+            "camp": "[Camp Designation]",
+            "date": "[YYYY-MM-DD]",
+            "commander": "[Commander Name]"
+        }
+    ],
+    "service_record": [
+        {
+            "from": "[YYYY-MM-DD]",
+            "to": "[YYYY-MM-DD]",
+            "department": "[Department Name]",
+            "company": "[Company Number]",
+            "camp": "[Camp Designation]",
+            "location": "[City, State]",
+            "work_type": "[Work Type]",
+            "performance": "[Performance Rating]",
+            "awol_days": 0,
+            "awop_days": 0,
+            "transferred_to": "[Transfer Location]",
+            "last_paid_date": "[YYYY-MM-DD]",
+            "disbursing_officer": "[Name and Title]",
+            "debts": {
+                "clothing": 0.0,
+                "equipment": 0.0,
+                "camp_exchange": 0.0,
+                "company_fund": 0.0,
+                "usamps": 0.0,
+                "other": 0.0
+            },
+            "remarks": "[Remarks]",
+            "verified_by": "[Name and Title]"
+        }
+    ],
+    "physical_exam": {
+        "acceptance": {
+            "place": "[City, State]",
+            "date": "[YYYY-MM-DD]",
+            "qualified": false,
+            "rejection_reason": "[Rejection Reason]",
+            "examiner": "[Name and Title]"
+        },
+        "enrollment": {
+            "height_in": 0.0,
+            "weight_lbs": 0,
+            "vision": {
+                "right": "[Format: 20/20]",
+                "left": "[Format: 20/20]",
+                "conditions": "[Vision Conditions]"
+            },
+            "hearing": {
+                "right": "[Format: 20/20]",
+                "left": "[Format: 20/20]",
+                "conditions": "[Hearing Conditions]"
+            },
+            "teeth": {
+                "upper_missing": "[Missing Upper Teeth]",
+                "lower_missing": "[Missing Lower Teeth]",
+                "mouth_gums": "[Mouth and Gums Condition]"
+            },
+            "complexion": "[Complexion]",
+            "eye_color": "[Eye Color]",
+            "hair_color": "[Hair Color]",
+            "scars_marks": "[Scars and Marks]",
+            "general_exam": "[General Exam Results]",
+            "surgical": "[Surgical Results]",
+            "locomotion": "[Locomotion Results]",
+            "cardiovascular": "[Cardiovascular Results]",
+            "lungs": "[Lungs Results]",
+            "genitourinary": "[Genitourinary Results]",
+            "neuropsychiatric": "[Neuropsychiatric Results]",
+            "urinalysis": "[Urinalysis Results]",
+            "qualified": false,
+            "disqualification_reason": "[Disqualification Reason]",
+            "remarks": "[Remarks]",
+            "examiner": "[Name and Title]",
+            "date": "[YYYY-MM-DD]"
+        },
+        "discharge_exam": {
+            "place": "[City, State]",
+            "date": "[YYYY-MM-DD]",
+            "no_change": false,
+            "notes": "[Examiner Notes]",
+            "examiner": "[Name and Title]"
+        },
+        "enrollee_disability_statement": "[Disability Statement]"
+    },
+    "fingerprints": {
+        "taken_at": "[Location]",
+        "date": "[YYYY-MM-DD]",
+        "forwarded_to": "[Location]",
+        "date_accepted": "[YYYY-MM-DD]"
+    },
+    "inoculations": [
+        {
+            "vaccine": "[Vaccine Type]",
+            "dose": 0,
+            "date": "[YYYY-MM-DD]",
+            "result": "[Inoculation Result]"
+        }
+    ],
+    "education_activities": {
+        "general_vocational": [
+            {
+                "subject": "[Subject Name]",
+                "date": "[YYYY-MM-DD]",
+                "rating": "[Rating]"
+            }
+        ],
+        "job_training": [
+            {
+                "type": "[Training Type]",
+                "date": "[YYYY-MM-DD]",
+                "rating": "[Rating]"
+            }
+        ],
+        "special_schools": [],
+        "certificates": [],
+        "personal_qualities": "[Personal Qualities]",
+        "adviser_estimate": "[Adviser Estimate]",
+        "outstanding_accomplishments": "[Accomplishments]"
+    },
+    "leader_appointments": [],
+    "absences": [
+        {
+            "from": "[YYYY-MM-DD]",
+            "to": "[YYYY-MM-DD]",
+            "type": "[Absence Type]",
+            "authority": "[Authority Document/Regulation]"
+        }
+    ],
+    "illness_injury": [],
+    "allotments": [
+        {
+            "sequence": 0,
+            "allottee_name": "[Full Name]",
+            "address": "[City, State]",
+            "amount": 0.0,
+            "from": "[YYYY-MM-DD]",
+            "to": "[YYYY-MM-DD]",
+            "termination_notified": false,
+            "termination_date": "[YYYY-MM-DD]"
+        }
+    ],
+    "disciplinary": [
+        {
+            "hearing_no": "[Hearing Number]",
+            "date": "[YYYY-MM-DD]",
+            "company": "[Company Number]",
+            "camp": "[Camp Designation]",
+            "location": "[City, State]",
+            "charge": "[Charge Description]",
+            "offense_location": "[Offense Location]",
+            "represented_by": "[Representative Name]",
+            "plea": "[Plea Type]",
+            "finding": "[Finding Result]",
+            "witnesses_against": [
+                "[Witness Name 1]",
+                "[Witness Name 2]"
+            ],
+            "witnesses_for": [],
+            "member_statement": "[Member Statement]",
+            "prior_offenses": [
+                {
+                    "date": "[YYYY-MM-DD]",
+                    "offense": "[Offense Description]",
+                    "punishment": "[Punishment Description]"
+                }
+            ],
+            "punishment": "[Punishment Description]",
+            "commanding_officer": "[Name and Title]",
+            "approved_by": "[Approving Authority]",
+            "approval_date": "[YYYY-MM-DD]"
+        }
+    ],
+    "discharge": {
+        "date": "[YYYY-MM-DD]",
+        "type": "[Discharge Type]",
+        "location": "[City, State]",
+        "reason": "[Discharge Reason]",
+        "transport_to": "[City, State]",
+        "forfeiture_of_pay": false,
+        "superintendent_estimate": "[Superintendent Estimate]",
+        "commander_certificate": "[Commander Certificate]"
+    }
+}
