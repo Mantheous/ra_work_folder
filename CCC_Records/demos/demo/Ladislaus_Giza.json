@@ -1,0 +1,93 @@
+{
+    "objectId": 529913494,
+    "start_page": 3,
+    "end_page": 16,
+    "individual_record": {
+        "name": "Giza, Ladislaus",
+        "serial_number": "2-322448",
+        "class": "Junior",
+        "state": "N.Y.",
+        "address": "123 Ellicott Rd., Lancaster, N.Y.",
+        "birth_date": "11/12/1921",
+        "birthplace": "Lancaster, N.Y.",
+        "nearest_relative": {
+            "name": "Mary Giza",
+            "relationship": "Mother",
+            "address": "123 Ellicott Rd., Lancaster, N.Y."
+        },
+        "demographics": {
+            "race": "White",
+            "citizenship": "Native born",
+            "religion": "Catholic"
+        },
+        "education": {
+            "highest_grade_completed": "Grammar School - 8",
+            "school_location": "Lancaster, N.Y.",
+            "year_left": "1937"
+        }
+    },
+    "physical_attributes": {
+        "height_inches": 65,
+        "weight_pounds": 144,
+        "eyes": "Brown",
+        "hair": "Brown",
+        "complexion": "Dark",
+        "identifying_marks": "Small scar on left chest; abdominal wall negative"
+    },
+    "service_history": [
+        {
+            "period": "10/09/1939 to 10/12/1939",
+            "company": "Detachment at Fort Dix, N.J.",
+            "type_of_work": "Conditioning & Traveling",
+            "performance": "Satisfactory"
+        },
+        {
+            "period": "10/18/1939 to 03/21/1940",
+            "company": "225th Company",
+            "camp": "G-129 Camp Lovelock, Nev.",
+            "type_of_work": "Laborer (Pick & Shovel)",
+            "performance": "Satisfactory"
+        },
+        {
+            "period": "03/22/1940 to 03/26/1940",
+            "company": "225th Company",
+            "location": "Enroute to Fort Dix, N.J.",
+            "type_of_work": "Traveling",
+            "performance": "Satisfactory"
+        }
+    ],
+    "educational_and_vocational_ratings": {
+        "subjects": [
+            {
+                "subject": "Social Science",
+                "rating": "Very Good"
+            },
+            {
+                "subject": "Welding",
+                "rating": "Average"
+            }
+        ],
+        "job_training": [
+            {
+                "job": "Road Construction",
+                "rating": "Very Good"
+            },
+            {
+                "job": "Truck Driver",
+                "rating": "Outstanding"
+            }
+        ],
+        "personal_qualities": "Dominant"
+    },
+    "allotment_details": {
+        "allottee": "Mary Giza",
+        "amount_per_month": 22.00,
+        "period": "10/09/1939 to 03/29/1940"
+    },
+    "discharge_information": {
+        "date": "03/29/1940",
+        "type": "Honorable",
+        "reason": "E.T.E. - Not desiring to reenroll",
+        "transportation_to": "Buffalo, N.Y."
+    }
+}

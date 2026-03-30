@@ -40,4 +40,10 @@
  - [ ] Segment
     - [x] Find method to split cases
  - [ ] NLP
+   - [ ] Select Model
+   - [ ] Clean OCR Noise
+   
  - [ ] Store
+
+ - [ ] Validation
+    - [ ] Manually extract some cases

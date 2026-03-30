@@ -413,3 +413,46 @@ I am going to be honest I have no idea what that code does. Need to go learn how
 
 ### Next Steps
 Just do the NLP bro. 
+
+## 03-30-2026
+
+### Day's Objectives
+- [ ] NLP
+- [x] Send email to the client
+
+### Options
+There are some general models that can do what we need. LLMs can do it, but they aren't made just to do what we need. If we can get a specialized solution I feel like that would work better. Most of Claudes training data is not OCR text of government documents. If you have a model that is trained on the kind of data that we are using I would be pretty sure that it would do better.
+The best thing would probably be to train our own model. That is a bit out of scope for me. We are a research lab though and we tecnically could do it.
+If we segment the pages and tell the model what to extract from each page, that would probably be significantly more accurate
+
+##### Pydantic
+So it seems like pydantic is really not nlp. It could be good for checking the results to make sure it's all clean, but It's not going to do any of the real work.
+
+##### BERT
+
+##### spaCy
+- fast
+
+
+##### ClaudeAPI
+- zero shot
+- Expensive
+This is the one that I would have the most confidence in for the least effort. I think it would be one of the most expensive ways we could do this.
+
+##### Some other LLM
+Maybe we could throw it in Mecrury 2 wouldn't that be fun. Gemini or ChatGPT would also be normal options.
+
+##### GLiNER (BERT)
+- zero shot
+- runs on CPU
+- cite it
+I took their sample code and messed with it a bit. It seems like I have too many fields. I don't know if I can get it to skip missing fields well
+
+##### LegalBERT
+This model would only be good if we sorted it's input. I think this would handle certain parts of the data really well. Other parts it would make large mistakes. This could be good for the court proceedings.
+
+### Local Model
+I have gotten something that seems to mostly work locally. It's really slow and I don't think it's very accurate.
+
+### API
+I hit rate limits on the API.
