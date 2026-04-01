@@ -8,7 +8,7 @@ all_data = []
 for row in conn.execute("""
     SELECT extracted_text, json
     FROM cases
-    WHERE na_id = '535024077'
+    WHERE na_id = '546201098'
     LIMIT 5
 """):
     # print(f"  {row['extracted_text'][:1000]}")
