@@ -533,4 +533,14 @@ This is what my data science teacher recommended. I can't get it to run on the l
   - [ ] Find some really bad OCR
 
 ### Tuning
-I think there are certain fields that we really just can't have. I found that using the XXL model seemed to produce much better results. It wasn't noticably slower it just took way longer to download.
+
+I think there are certain fields that we really just can't have. I found that using the XXL model seemed to produce much better results. It wasn't noticably slower it just took way longer to download. It's not able to find things that are too similair to some other thing.
+
+Like we can't get:
+
+- CCC Co.
+- Father
+- Mother
+
+The case splitter is not accurate enough. I have a good selection of bad splits. Empty pages tend to have garbled OCR and sometimes they contain enough information to trigger a split.
+I also think that the model can only fit one page in it's context window. That means we either we need a bigger model, or... We need to sort the pages.
