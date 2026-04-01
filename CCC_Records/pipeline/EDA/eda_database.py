@@ -1,6 +1,6 @@
 import sqlite3
 import json
-conn = sqlite3.connect('CCC_Records/pipeline/ccc_records.db')
+conn = sqlite3.connect('CCC_Records/pipeline/ccc_records (1).db')
 conn.row_factory = sqlite3.Row
 cursor = conn.cursor()
 

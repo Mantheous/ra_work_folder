@@ -531,3 +531,6 @@ This is what my data science teacher recommended. I can't get it to run on the l
 - [ ] Tune GLiNER for better results.
 - [ ] Create some labeled data for testing
   - [ ] Find some really bad OCR
+
+### Tuning
+I think there are certain fields that we really just can't have. I found that using the XXL model seemed to produce much better results. It wasn't noticably slower it just took way longer to download.
