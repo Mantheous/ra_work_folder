@@ -18,9 +18,9 @@ import sqlite3
 # Configuration
 # ---------------------------------------------------------------------------
 DB_PATH = Path(__file__).resolve().parent.parent / "ccc_records.db"
-MODEL = "gemini-2.5-flash-lite"
-REQUESTS_PER_MINUTE = 13        # stay well under 15 RPM free-tier limit
-INPUT_TOKENS_PER_MIN = 200_000  # stay under 250k free-tier limit
+MODEL = "gemma-3-1b"
+REQUESTS_PER_MINUTE = 25       # stay well under 30 RPM free-tier limit
+INPUT_TOKENS_PER_MIN = 10_000  # stay under 15k free-tier limit
 SLEEP_BETWEEN = 60 / REQUESTS_PER_MINUTE  # seconds between requests
 MAX_RETRIES = 5                 # per-case retry limit
 BATCH_COMMIT_SIZE = 5           # commit to DB every N successful writes
@@ -35,12 +35,27 @@ logging.basicConfig(
 )
 log = logging.getLogger("gemini_nlp")
 
+# Sentinel written to the DB while a case is being processed.
+# Prevents other instances from picking up the same row.
+IN_PROGRESS = "__in_progress__"
+
 # ---------------------------------------------------------------------------
 # Database helpers
 # ---------------------------------------------------------------------------
 
+def connect_db() -> sqlite3.Connection:
+    """Open DB with WAL mode and a generous busy-timeout for parallel access."""
+    conn = sqlite3.connect(str(DB_PATH), timeout=60)
+    conn.row_factory = sqlite3.Row
+    # WAL lets multiple readers and one writer coexist without blocking.
+    conn.execute("PRAGMA journal_mode=WAL")
+    # If SQLite can't get a write lock immediately, retry for up to 60 s.
+    conn.execute("PRAGMA busy_timeout=60000")
+    return conn
+
+
 def ensure_nlp_column(conn: sqlite3.Connection):
-    """Add nlp_json column to cases table if it doesn't exist yet."""
+    """Add json column to cases table if it doesn't exist yet."""
     cols = [row[1] for row in conn.execute("PRAGMA table_info(cases)")]
     if "json" not in cols:
         conn.execute("ALTER TABLE cases ADD COLUMN json TEXT")
@@ -48,23 +63,67 @@ def ensure_nlp_column(conn: sqlite3.Connection):
         log.info("Added 'json' column to cases table.")
 
 
-def get_unprocessed_cases(conn: sqlite3.Connection) -> list[tuple[str, str, str]]:
-    """Return (case_start_id, na_id, extracted_text) for all cases missing NLP."""
-    rows = conn.execute("""
-        SELECT case_start_id, na_id, extracted_text
-        FROM cases
-        WHERE json IS NULL
-          AND extracted_text IS NOT NULL
-    """).fetchall()
-    return rows
+def count_remaining(conn: sqlite3.Connection) -> int:
+    """Count cases that still need processing (NULL or stuck in-progress)."""
+    row = conn.execute(
+        "SELECT COUNT(*) FROM cases WHERE json IS NULL AND extracted_text IS NOT NULL"
+    ).fetchone()
+    return row[0]
+
+
+def claim_next_case(conn: sqlite3.Connection) -> tuple[str, str, str] | None:
+    """
+    Atomically claim one unprocessed case for this instance.
+
+    Strategy:
+      1. SELECT a candidate row where json IS NULL.
+      2. UPDATE that exact row to IN_PROGRESS *only if* json IS still NULL.
+      3. Check rowcount — if 1, we won the race; if 0, another instance
+         claimed it first, so loop and try the next candidate.
+
+    Returns (case_start_id, na_id, extracted_text) or None if no work left.
+    """
+    while True:
+        row = conn.execute("""
+            SELECT case_start_id, na_id, extracted_text
+            FROM cases
+            WHERE json IS NULL
+              AND extracted_text IS NOT NULL
+            LIMIT 1
+        """).fetchone()
+
+        if row is None:
+            return None  # Nothing left to process
+
+        cur = conn.execute("""
+            UPDATE cases
+            SET json = ?
+            WHERE case_start_id = ? AND json IS NULL
+        """, (IN_PROGRESS, row["case_start_id"]))
+        conn.commit()
+
+        if cur.rowcount == 1:
+            # We claimed it successfully
+            return (row["case_start_id"], row["na_id"], row["extracted_text"])
+        # Another instance claimed it first — try the next row
 
 
 def save_nlp_result(conn: sqlite3.Connection, case_start_id: str, nlp_json: str):
-    """Write the NLP JSON string to the database for a given case."""
+    """Overwrite the IN_PROGRESS sentinel with the real NLP JSON."""
     conn.execute(
         "UPDATE cases SET json = ? WHERE case_start_id = ?",
         (nlp_json, case_start_id),
     )
+    conn.commit()
+
+
+def release_case(conn: sqlite3.Connection, case_start_id: str):
+    """Reset a failed case back to NULL so it can be retried later."""
+    conn.execute(
+        "UPDATE cases SET json = NULL WHERE case_start_id = ? AND json = ?",
+        (case_start_id, IN_PROGRESS),
+    )
+    conn.commit()
 
 # ---------------------------------------------------------------------------
 # Preprocessing
@@ -154,33 +213,41 @@ def call_gemini(case_text: str) -> str | None:
 # ---------------------------------------------------------------------------
 
 def main():
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-
+    conn = connect_db()
     ensure_nlp_column(conn)
-    cases = get_unprocessed_cases(conn)
-    total = len(cases)
-    log.info("Found %d unprocessed cases.", total)
 
-    if total == 0:
+    remaining = count_remaining(conn)
+    log.info("~%d unprocessed cases visible at startup.", remaining)
+
+    if remaining == 0:
         log.info("Nothing to do – exiting.")
+        conn.close()
         return
 
     successes = 0
     failures = 0
-    uncommitted = 0
+    processed = 0
 
-    for idx, (case_start_id, na_id, extracted_text) in enumerate(cases, 1):
+    while True:
+        # Atomically claim the next available case.
+        claimed = claim_next_case(conn)
+        if claimed is None:
+            log.info("No more unprocessed cases – exiting.")
+            break
+
+        case_start_id, na_id, extracted_text = claimed
+        processed += 1
         log.info(
-            "[%d/%d] Processing case_start_id=%s  na_id=%s",
-            idx, total, case_start_id, na_id,
+            "[#%d] Processing case_start_id=%s  na_id=%s",
+            processed, case_start_id, na_id,
         )
 
         # Preprocess
         try:
             case_text = preprocess_case(extracted_text)
         except Exception as exc:
-            log.error("  Preprocess failed: %s – skipping.", exc)
+            log.error("  Preprocess failed: %s – releasing back to queue.", exc)
+            release_case(conn, case_start_id)
             failures += 1
             continue
 
@@ -188,31 +255,22 @@ def main():
         result = call_gemini(case_text)
 
         if result is not None:
-            save_nlp_result(conn, case_start_id, result)
+            save_nlp_result(conn, case_start_id, result)  # also commits
             successes += 1
-            uncommitted += 1
             log.info("  ✓ Saved NLP result.")
         else:
+            # Put the row back so another instance or a future run can retry it
+            release_case(conn, case_start_id)
             failures += 1
-            log.warning("  ✗ No result for this case.")
-
-        # Periodic commit
-        if uncommitted >= BATCH_COMMIT_SIZE:
-            conn.commit()
-            uncommitted = 0
-            log.info("  Committed batch to DB.")
+            log.warning("  ✗ No result – released case back to queue.")
 
         # Rate-limit pacing
         time.sleep(SLEEP_BETWEEN)
 
-    # Final commit
-    if uncommitted > 0:
-        conn.commit()
-
     conn.close()
     log.info(
-        "Done. %d succeeded, %d failed out of %d total.",
-        successes, failures, total,
+        "Done. %d succeeded, %d failed/released out of %d claimed.",
+        successes, failures, processed,
     )
 
 
