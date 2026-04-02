@@ -30,10 +30,10 @@
 - [ ] Figure out how I want to structure the personal data
 
 - [ ] Small scope Question: Names of men in company 4479.
-  - [ ] extracted text query
-  - [ ] split pages by person
-  - [ ] parse response
-  - [ ] NLP to extract names
+  - [x] extracted text query
+  - [x] split pages by person
+  - [x] parse response
+  - [x] NLP to extract names
 
 ### Pipeline
 
@@ -54,3 +54,4 @@
   - How much would it cost for these results
   - try Gemini 1.5 Flash
   - Deepseek
+  - GLiNER

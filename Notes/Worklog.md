@@ -544,3 +544,29 @@ Like we can't get:
 
 The case splitter is not accurate enough. I have a good selection of bad splits. Empty pages tend to have garbled OCR and sometimes they contain enough information to trigger a split.
 I also think that the model can only fit one page in it's context window. That means we either we need a bigger model, or... We need to sort the pages.
+
+## 04-02-2026
+
+### Automated testing
+If I have a good set of labeled records where I have verified that they are true, I can use these as a grounding for truth. Then I can have different models predict fields. Then I can get a percentage of the json that is there, percentage that is correct. Then the other question is what information is most important.
+- Create master
+
+### CCC Record Format
+Because they are ordered alphabetically, there is no correlation between order/book and which versions of the forms they used. This means that one book contains basically a random sample of formating. The one thing that is correlated over books is the quality of the OCR. If one page in a book has poor transcription it's often due to poor scan quality that is often consistent across the book. That means that to get a good sample of our data we need to find the worse OCR book and another book and we should have pretty good coverage of all of the cases.
+
+You can find the worse OCR book by the segmenter results. If a book has a fewer cases that is ussually because the segmenter failed to detect the cases. 
+The worse books are:
+ - 545597253
+ - 489764045
+
+Another notable book is 486953951. It doesn't have cases. So we probably should throw it out of the nlp. It really would need to be processed manually or at least with a different process. It's a book full of redos. I am not sure how to link it to the originals though. 
+
+### DataGrip
+I pulled up a new tool because I felt really disconnected from my data. I grabbed dataGrip and it seems to meet my needs pretty well. In a few minutes I was able to find some major problems in my data.
+
+### Total_obejects
+I expected this colum to be filled with 100 most of the time and the last chunk would be less than 100. Instead it shows the total pages of the document.
+
+### Summary
+
+I made some tools for automating the pipeline a bit. I added a reset script and a pipeline script so if I want to I can delete everything and do a full run through. I think I will try a run of it maybe on Riven, or just have my laptop go at it over night.
